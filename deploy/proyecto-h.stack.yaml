@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  api:
+    image: proyecto-h-api:latest
+    networks:
+      - iagenteknet
+      - supabase_internal
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - APP_TITLE=Gestor de Citas Hospitalarias
+      - MINIO_ENABLED=true
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET=hospital
+      - MINIO_SECURE=false
+      - MINIO_PUBLIC_BASE_URL=https://iagentekminioback.iagentek.com.mx
+      - SUPABASE_URL=https://iagenteksupabase.iagentek.com.mx
+    volumes:
+      - proyecto_h_media:/app/media
+      - proyecto_h_data:/app/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=iagenteknet
+        - traefik.http.routers.proyecto-h.entrypoints=websecure
+        - traefik.http.routers.proyecto-h.rule=Host(`proyecto-h.iagentek.com.mx`)
+        - traefik.http.routers.proyecto-h.service=proyecto-h
+        - traefik.http.routers.proyecto-h.tls=true
+        - traefik.http.routers.proyecto-h.tls.certresolver=letsencryptresolver
+        - traefik.http.services.proyecto-h.loadbalancer.server.port=8000
+        - traefik.http.routers.proyecto-h-http.entrypoints=web
+        - traefik.http.routers.proyecto-h-http.rule=Host(`proyecto-h.iagentek.com.mx`)
+        - traefik.http.routers.proyecto-h-http.middlewares=proyecto-h-redirect
+        - traefik.http.middlewares.proyecto-h-redirect.redirectscheme.scheme=https
+        - traefik.http.middlewares.proyecto-h-redirect.redirectscheme.permanent=true
+
+networks:
+  iagenteknet:
+    external: true
+  supabase_internal:
+    external: true
+
+volumes:
+  proyecto_h_media:
+  proyecto_h_data:
