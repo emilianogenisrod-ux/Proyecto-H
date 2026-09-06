@@ -31,10 +31,17 @@ ROLE_MODULES = {
 }
 
 USERS: dict[str, dict] = {
-    "emilio@farma": {
-        "email": "emilio@farma",
-        "password": "emilio123",
-        "name": "Emilio Farma",
+    "emiliano@farma": {
+        "email": "emiliano@farma",
+        "password": "emiliano123",
+        "name": "Emiliano Farma",
+        "role": ROLE_ADMIN,
+        "role_label": ROLE_LABELS[ROLE_ADMIN],
+    },
+    "sara@farma": {
+        "email": "sara@farma",
+        "password": "sara123",
+        "name": "Sara Farma",
         "role": ROLE_ADMIN,
         "role_label": ROLE_LABELS[ROLE_ADMIN],
     },

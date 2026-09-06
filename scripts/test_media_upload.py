@@ -10,7 +10,7 @@ png = bytes.fromhex(
 client = TestClient(app)
 r = client.post(
     "/login",
-    data={"email": "emilio@farma", "password": "emilio123"},
+    data={"email": "emiliano@farma", "password": "emiliano123"},
     follow_redirects=False,
 )
 print("login", r.status_code)

@@ -225,7 +225,7 @@ const data = await res.json();</pre>
         <pre class="docs-code">import httpx
 
 with httpx.Client(base_url="http://127.0.0.1:8000") as client:
-    client.post("/login", data={"email": "emilio@farma", "password": "emilio123"})
+    client.post("/login", data={"email": "emiliano@farma", "password": "emiliano123"})
     r = client.get("/api/doctors")
     print(r.json())</pre>
         <h3>Crear cita (JSON)</h3>
@@ -293,7 +293,8 @@ MAX_VIDEO_BYTES = 50 * 1024 * 1024</pre>
           <table>
             <thead><tr><th>Rol</th><th>Usuario demo</th><th>Panel</th><th>Alcance</th></tr></thead>
             <tbody>
-              <tr><td>Administrador</td><td>emilio@farma</td><td>/app/admin</td><td>CRUD completo + medios + usuarios</td></tr>
+              <tr><td>Administrador</td><td>emiliano@farma</td><td>/app/admin</td><td>CRUD completo + medios + usuarios</td></tr>
+              <tr><td>Administrador</td><td>sara@farma</td><td>/app/admin</td><td>CRUD completo + medios + usuarios</td></tr>
               <tr><td>Director</td><td>director@farma</td><td>/app/director</td><td>Supervisión, reportes, medios</td></tr>
               <tr><td>Doctor</td><td>doctor@farma</td><td>/app/doctor</td><td>Agenda y citas propias</td></tr>
               <tr><td>Paciente</td><td>paciente@farma</td><td>/app/patient</td><td>Agendar y ver datos propios</td></tr>
