@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/master.css">
   <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body class="auth-body auth-body--video">
@@ -37,7 +38,7 @@
 
       <p class="auth-kicker">Portal institucional</p>
       <h1 class="auth-form-title">Iniciar sesión</h1>
-      <p class="auth-form-lead">Use su correo @farma y contraseña asignada.</p>
+      <p class="auth-form-lead">Ingrese su correo institucional y contraseña.</p>
 
       {% if error %}
       <div class="auth-alert" role="alert">{{ error }}</div>
@@ -47,13 +48,13 @@
         <label>
           Correo
           <input type="email" name="email" autocomplete="username" required
-                 value="{{ email_value or 'emilio@farma' }}" placeholder="usuario@farma">
+                 value="{{ email_value or '' }}" placeholder="ejemplo@correo.com">
         </label>
         <label class="auth-password-label">
           Contraseña
           <span class="auth-password-field">
             <input type="password" name="password" id="login-password" autocomplete="current-password" required
-                   placeholder="••••••••">
+                   value="" placeholder="••••••••">
             <button type="button" class="auth-password-toggle" id="toggle-password" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña">
               <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path class="eye-outline" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
