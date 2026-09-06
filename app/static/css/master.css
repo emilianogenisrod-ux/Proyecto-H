@@ -1,0 +1,453 @@
+/**
+ * Proyecto H — Archivo maestro de estilos
+ * Fuente de verdad para tokens, tipografía, espaciado y responsive.
+ * Cargar ANTES de styles.css en todas las vistas.
+ */
+
+/* ========== Tokens ========== */
+:root {
+  /* Marca */
+  --mist: #90afc5;
+  --stone: #336b87;
+  --shadow: #2a3132;
+  --autumn: #763626;
+  --mist-soft: #c5d7e4;
+  --mist-wash: #e8f0f5;
+  --stone-deep: #254d63;
+  --autumn-soft: #a45a45;
+
+  /* Superficies */
+  --bg: #eef3f6;
+  --surface: #fafcfd;
+  --surface-elevated: #ffffff;
+  --text: var(--shadow);
+  --text-muted: #5a6a6d;
+  --border: color-mix(in srgb, var(--mist) 55%, white);
+  --focus: color-mix(in srgb, var(--stone) 35%, transparent);
+  --danger: var(--autumn);
+  --success: #2f6b4f;
+  --warning: #8a5a2b;
+
+  /* Forma */
+  --radius: 6px;
+  --radius-lg: 12px;
+  --shadow-soft: 0 10px 30px rgba(42, 49, 50, 0.08);
+  --header-h: 4.25rem;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Sora", "Segoe UI", sans-serif;
+
+  /* Layout */
+  --container: 1180px;
+  --container-narrow: 720px;
+  --gutter: clamp(1rem, 3vw, 1.5rem);
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* Breakpoints (referencia documental; media queries usan px) */
+  --bp-sm: 520px;
+  --bp-md: 760px;
+  --bp-lg: 960px;
+  --bp-xl: 1200px;
+}
+
+/* ========== Reset base homologado ========== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.55;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* ========== Contenedores ========== */
+.container {
+  width: min(100% - (var(--gutter) * 2), var(--container));
+  margin-inline: auto;
+}
+
+.container--narrow {
+  width: min(100% - (var(--gutter) * 2), var(--container-narrow));
+  margin-inline: auto;
+}
+
+/* ========== Utilidades de layout ========== */
+.u-stack {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.u-stack-sm {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.u-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.u-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.u-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.u-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.u-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.u-min-0 {
+  min-width: 0;
+}
+
+.u-w-full {
+  width: 100%;
+}
+
+/* ========== Formularios homologados ========== */
+.form-grid,
+.inline-form,
+.stack-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: end;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--stone-deep);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.75rem;
+  background: #fff;
+  color: var(--text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--text-muted) 75%, white);
+  opacity: 1;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* ========== Tablas responsivas ========== */
+.table-wrap,
+.docs-table-wrap,
+.u-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrap table,
+.docs-table-wrap table,
+.u-table-responsive table {
+  min-width: 560px;
+}
+
+/* ========== Cabecera / nav móvil ========== */
+.site-header__inner {
+  gap: var(--space-3);
+}
+
+@media (max-width: 960px) {
+  :root {
+    --header-h: 3.75rem;
+  }
+
+  .layout__grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sidebar {
+    position: static !important;
+    display: none !important;
+  }
+
+  .stats-grid,
+  .u-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .u-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .page-hero__title {
+    font-size: clamp(1.45rem, 5vw, 2rem) !important;
+  }
+
+  .page-hero__inner {
+    padding-block: 1.25rem !important;
+  }
+
+  .site-footer__grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .docs-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .docs-toc {
+    position: static !important;
+  }
+
+  .docs-grid-2,
+  .u-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .nav-toggle {
+    display: inline-flex !important;
+  }
+
+  .primary-nav {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    z-index: 50;
+    background: var(--surface-elevated);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem var(--gutter) 1rem;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .primary-nav.is-open {
+    display: block;
+  }
+
+  .primary-nav__list {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .nav-link {
+    width: 100%;
+    text-align: left;
+    border-radius: var(--radius);
+  }
+
+  .site-header {
+    position: relative;
+  }
+
+  .utility-bar__inner {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .auth-shell:not(.auth-shell--overlay) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .auth-shell--overlay {
+    padding: 1rem !important;
+    align-items: flex-end !important;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom)) !important;
+  }
+
+  .auth-card {
+    width: min(100%, 440px) !important;
+    padding: 1.25rem !important;
+  }
+
+  .auth-form-title {
+    font-size: clamp(1.4rem, 6vw, 1.85rem) !important;
+  }
+
+  .profile-dropdown {
+    right: 0;
+    left: auto;
+    width: min(92vw, 320px) !important;
+  }
+
+  .profile-dialog__card {
+    width: min(94vw, 440px) !important;
+    max-height: 90dvh;
+    overflow: auto;
+  }
+
+  .inline-form,
+  .toolbar,
+  .actions-row,
+  .panel-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .inline-form .btn,
+  .toolbar .btn,
+  .actions-row .btn {
+    width: 100%;
+  }
+
+  .surface__body {
+    padding: 0.9rem !important;
+  }
+
+  .docs-top__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .docs-top__nav {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .stats-grid,
+  .u-grid-2,
+  .u-grid-3,
+  .u-grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .utility-bar__item {
+    display: none;
+  }
+
+  .brand__tag {
+    display: none;
+  }
+
+  .page-hero__lead {
+    font-size: 0.92rem !important;
+  }
+
+  .stat-card {
+    padding: 0.95rem !important;
+  }
+
+  .auth-brand {
+    gap: 0.75rem;
+  }
+
+  .btn-block {
+    width: 100%;
+  }
+
+  .table-wrap table,
+  .docs-table-wrap table,
+  .u-table-responsive table {
+    min-width: 480px;
+    font-size: 0.82rem;
+  }
+}
+
+/* ========== Safe areas (notch / home indicator) ========== */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .utility-bar,
+  .site-header,
+  .docs-top {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ========== Impresión / reducción de movimiento ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
