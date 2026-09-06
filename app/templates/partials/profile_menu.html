@@ -1,0 +1,132 @@
+{# Menú de perfil: avatar circular con iniciales #}
+{% set _name = user.name if user else 'Usuario' %}
+{% set _parts = _name.replace('Dr.', '').replace('Dra.', '').strip().split() %}
+{% set _initials = ((_parts[0][0] if _parts else 'U') ~ (_parts[1][0] if _parts|length > 1 else ''))|upper %}
+<div class="profile-menu" id="profile-menu" data-role="{{ user.role if user else '' }}">
+  <button
+    type="button"
+    class="profile-avatar"
+    id="profile-avatar-btn"
+    aria-expanded="false"
+    aria-haspopup="true"
+    aria-controls="profile-dropdown"
+    title="{{ _name }}"
+  >
+    <span class="profile-avatar__initials" aria-hidden="true">{{ _initials }}</span>
+    <span class="sr-only">Menú de perfil de {{ _name }}</span>
+  </button>
+
+  <div class="profile-dropdown" id="profile-dropdown" hidden role="menu">
+    <div class="profile-dropdown__head">
+      <span class="profile-dropdown__avatar" aria-hidden="true">{{ _initials }}</span>
+      <div>
+        <p class="profile-dropdown__name">{{ _name }}</p>
+        <p class="profile-dropdown__meta">{{ user.role_label if user else '' }} · {{ user.email if user else '' }}</p>
+      </div>
+    </div>
+    <ul class="profile-dropdown__list">
+      <li role="none">
+        <button type="button" class="profile-dropdown__item" role="menuitem" data-profile-action="settings">
+          Configuración de perfil
+        </button>
+      </li>
+      <li role="none">
+        <button type="button" class="profile-dropdown__item" role="menuitem" data-profile-action="account">
+          Mi cuenta
+        </button>
+      </li>
+      <li role="none">
+        <a class="profile-dropdown__item" role="menuitem" href="/documentacion">
+          Documentación
+        </a>
+      </li>
+      <li role="none">
+        <a class="profile-dropdown__item" role="menuitem" href="{{ user.home if user and user.home else '/app' }}">
+          Ir a mi panel
+        </a>
+      </li>
+      {% if user and user.role == 'admin' %}
+      <li role="none">
+        <a class="profile-dropdown__item" role="menuitem" href="/docs" target="_blank" rel="noopener">
+          API Docs (Swagger)
+        </a>
+      </li>
+      {% endif %}
+      <li role="none" class="profile-dropdown__divider"></li>
+      <li role="none">
+        <a class="profile-dropdown__item profile-dropdown__item--danger" role="menuitem" href="/logout">
+          Cerrar sesión
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- Modal configuración de perfil -->
+<dialog class="profile-dialog" id="profile-settings-dialog" aria-labelledby="profile-settings-title">
+  <form method="dialog" class="profile-dialog__card" id="profile-settings-form">
+    <header class="profile-dialog__head">
+      <h2 id="profile-settings-title">Configuración de perfil</h2>
+      <button type="submit" class="profile-dialog__close" value="cancel" aria-label="Cerrar">×</button>
+    </header>
+    <div class="profile-dialog__body">
+      <div class="profile-dialog__preview">
+        <span class="profile-avatar profile-avatar--lg" id="profile-avatar-preview" aria-hidden="true">{{ _initials }}</span>
+        <div>
+          <p class="profile-dropdown__name">{{ _name }}</p>
+          <p class="profile-dropdown__meta">{{ user.role_label if user else '' }}</p>
+        </div>
+      </div>
+      <label>Foto de perfil
+        <input type="file" id="profile-avatar-file" accept="image/jpeg,image/png,image/webp,image/gif">
+      </label>
+      <button type="button" class="btn btn-ghost" id="profile-avatar-upload">Subir imagen de perfil</button>
+      <label>Nombre completo
+        <input type="text" name="display_name" value="{{ _name }}" readonly>
+      </label>
+      <label>Correo
+        <input type="email" name="email" value="{{ user.email if user else '' }}" readonly>
+      </label>
+      <label>Rol
+        <input type="text" name="role" value="{{ user.role_label if user else '' }}" readonly>
+      </label>
+      <label>Idioma de la interfaz
+        <select name="locale">
+          <option value="es" selected>Español</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="notify_email" checked>
+        Recibir avisos por correo
+      </label>
+      <p class="profile-dialog__hint">Los datos de identidad son institucionales. Preferencias se guardan en este dispositivo.</p>
+    </div>
+    <footer class="profile-dialog__actions">
+      <button type="submit" class="btn btn-ghost" value="cancel">Cancelar</button>
+      <button type="submit" class="btn btn-primary" value="save" id="profile-settings-save">Guardar preferencias</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog class="profile-dialog" id="profile-account-dialog" aria-labelledby="profile-account-title">
+  <form method="dialog" class="profile-dialog__card">
+    <header class="profile-dialog__head">
+      <h2 id="profile-account-title">Mi cuenta</h2>
+      <button type="submit" class="profile-dialog__close" value="cancel" aria-label="Cerrar">×</button>
+    </header>
+    <div class="profile-dialog__body">
+      <p>Sesión activa como <strong>{{ _name }}</strong> ({{ user.role_label if user else '' }}).</p>
+      <ul class="profile-account-list">
+        <li><span>Correo</span><code>{{ user.email if user else '—' }}</code></li>
+        <li><span>Panel</span><code>{{ user.home if user else '/app' }}</code></li>
+        {% if user and user.doctor_id %}<li><span>ID doctor</span><code>{{ user.doctor_id }}</code></li>{% endif %}
+        {% if user and user.patient_id %}<li><span>ID paciente</span><code>{{ user.patient_id }}</code></li>{% endif %}
+      </ul>
+    </div>
+    <footer class="profile-dialog__actions">
+      <a class="btn btn-danger" href="/logout">Cerrar sesión</a>
+      <button type="submit" class="btn btn-primary" value="ok">Entendido</button>
+    </footer>
+  </form>
+</dialog>

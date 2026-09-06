@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body data-role="doctor">
+  <script id="boot-user" type="application/json">{{ user | tojson }}</script>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <div id="app-loader" class="app-loader" hidden><div class="app-loader__panel"><div class="loader"><span class="loader__ring"></span></div><p id="app-loader-text">Cargando…</p></div></div>
+
+  <div class="utility-bar"><div class="container utility-bar__inner">
+    <span class="utility-bar__item">Consultorio clínico</span>
+    <div class="utility-bar__links">
+      <span id="utility-date"></span>
+      {% include "partials/profile_menu.html" %}
+    </div>
+  </div></div>
+
+  <header class="site-header"><div class="container site-header__inner">
+    <a class="brand" href="/app/doctor"><span class="brand__mark"></span><span class="brand__text"><span class="brand__name">Proyecto H</span><span class="brand__tag">Consultorio</span></span></a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"><span class="nav-toggle__bar"></span><span class="nav-toggle__bar"></span></button>
+    <nav class="primary-nav" id="primary-nav"><ul class="primary-nav__list" id="tabs">
+      <li><button type="button" class="nav-link active" data-tab="dashboard">Hoy</button></li>
+      <li><button type="button" class="nav-link" data-tab="schedule">Mi horario</button></li>
+      <li><button type="button" class="nav-link" data-tab="appointments">Mis citas</button></li>
+      <li><button type="button" class="nav-link" data-tab="patients">Pacientes</button></li>
+    </ul></nav>
+  </div></header>
+
+  <section class="page-hero"><div class="container page-hero__inner">
+    <p class="page-hero__eyebrow" id="page-eyebrow">Agenda médica</p>
+    <h1 class="page-hero__title" id="page-title">Mi consultorio</h1>
+    <p class="page-hero__lead" id="page-lead">Citas asignadas, horario semanal y pacientes del día.</p>
+  </div></section>
+
+  <div class="layout"><div class="container layout__grid">
+    <aside class="sidebar"><p class="sidebar__label">Doctor</p>
+      <ul class="sidebar__nav" id="sidebar-nav">
+        <li><button type="button" class="sidebar-link active" data-tab="dashboard">Hoy</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="schedule">Mi horario</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="appointments">Mis citas</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="patients">Pacientes</button></li>
+      </ul>
+      <div class="sidebar__note"><strong>Su perfil</strong><p id="doctor-profile-note">Cargando…</p></div>
+    </aside>
+
+    <main class="content">
+      <section id="panel-dashboard" class="panel active" data-title="Mi consultorio" data-eyebrow="Agenda médica" data-lead="Citas asignadas, horario semanal y pacientes del día.">
+        <div class="stats-grid" style="grid-template-columns: repeat(3, minmax(0,1fr));">
+          <article class="stat-card"><div class="stat-card__value" id="doc-stat-today">—</div><div class="stat-card__label">Citas hoy</div></article>
+          <article class="stat-card"><div class="stat-card__value" id="doc-stat-week">—</div><div class="stat-card__label">Citas programadas</div></article>
+          <article class="stat-card accent"><div class="stat-card__value" id="doc-stat-blocks">—</div><div class="stat-card__label">Bloques horarios</div></article>
+        </div>
+        <div class="surface"><header class="surface__head"><h2>Próximas atenciones</h2></header><div class="surface__body" id="doctor-upcoming"></div></div>
+      </section>
+
+      <section id="panel-schedule" class="panel" data-title="Mi horario" data-eyebrow="Disponibilidad" data-lead="Bloques semanales de su consultorio.">
+        <div class="surface"><header class="surface__head"><h2>Horario semanal</h2></header><div class="surface__body" id="doctor-schedule"></div></div>
+      </section>
+
+      <section id="panel-appointments" class="panel" data-title="Mis citas" data-eyebrow="Consultas" data-lead="Listado de citas asignadas a su perfil.">
+        <div class="surface"><header class="surface__head"><h2>Citas del doctor</h2></header><div class="surface__body" id="doctor-appointments"></div></div>
+      </section>
+
+      <section id="panel-patients" class="panel" data-title="Pacientes" data-eyebrow="Directorio" data-lead="Pacientes del sistema (consulta).">
+        <div class="surface"><header class="surface__head"><h2>Directorio de pacientes</h2></header><div class="surface__body" id="doctor-patients"></div></div>
+      </section>
+    </main>
+  </div></div>
+
+  <footer class="site-footer"><div class="container site-footer__base"><span>Proyecto H · Vista de doctor</span></div></footer>
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/profile-menu.js"></script>
+  <script src="/static/js/doctor.js"></script>
+</body>
+</html>

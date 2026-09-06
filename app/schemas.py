@@ -10,6 +10,8 @@ class DoctorBase(BaseModel):
     specialty: str = Field(..., min_length=1, max_length=120)
     consultation_minutes: int = Field(default=30, ge=5, le=240)
     default_fee: float = Field(default=500.0, ge=0)
+    phone: str | None = Field(default=None, max_length=30)
+    email: str | None = Field(default=None, max_length=120)
     is_active: bool = True
 
 
@@ -22,6 +24,8 @@ class DoctorUpdate(BaseModel):
     specialty: str | None = Field(default=None, min_length=1, max_length=120)
     consultation_minutes: int | None = Field(default=None, ge=5, le=240)
     default_fee: float | None = Field(default=None, ge=0)
+    phone: str | None = Field(default=None, max_length=30)
+    email: str | None = Field(default=None, max_length=120)
     is_active: bool | None = None
 
 

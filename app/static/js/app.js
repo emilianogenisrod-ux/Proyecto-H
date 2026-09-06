@@ -14,17 +14,54 @@ const STATUS_LABELS = {
 
 const WEEKDAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
+let _loaderTimer = null;
+let _loaderCount = 0;
+
+function showLoading(message = "Cargando…") {
+  const el = document.getElementById("app-loader");
+  const text = document.getElementById("app-loader-text");
+  if (text) text.textContent = message;
+  _loaderCount += 1;
+  clearTimeout(_loaderTimer);
+  _loaderTimer = setTimeout(() => {
+    if (!el) return;
+    el.hidden = false;
+    el.setAttribute("aria-hidden", "false");
+  }, 180);
+}
+
+function hideLoading() {
+  _loaderCount = Math.max(0, _loaderCount - 1);
+  if (_loaderCount > 0) return;
+  clearTimeout(_loaderTimer);
+  const el = document.getElementById("app-loader");
+  if (!el) return;
+  el.hidden = true;
+  el.setAttribute("aria-hidden", "true");
+}
+
 async function api(path, options = {}) {
-  const res = await fetch(`${API}${path}`, {
-    headers: { "Content-Type": "application/json", ...options.headers },
-    ...options,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || "Error en la solicitud");
+  const silent = options.silent;
+  delete options.silent;
+  if (!silent) showLoading();
+  try {
+    const res = await fetch(`${API}${path}`, {
+      headers: { "Content-Type": "application/json", ...options.headers },
+      ...options,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      const detail = err.detail || "Error en la solicitud";
+      if (res.status >= 500) {
+        window.location.href = `/error?code=${res.status}&title=${encodeURIComponent("Error del servidor")}&message=${encodeURIComponent(String(detail))}`;
+      }
+      throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    }
+    if (res.status === 204) return null;
+    return res.json();
+  } finally {
+    if (!silent) hideLoading();
   }
-  if (res.status === 204) return null;
-  return res.json();
 }
 
 function toast(msg, type = "success") {
@@ -58,19 +95,82 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// Tabs
-document.getElementById("tabs").addEventListener("click", (e) => {
-  if (e.target.tagName !== "BUTTON") return;
-  const tab = e.target.dataset.tab;
-  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+const PAGE_LOADERS = {
+  dashboard: () => loadDashboard(),
+  doctors: () => loadDoctors(),
+  patients: () => loadPatients(),
+  schedules: () => loadSchedules(),
+  appointments: () => loadAppointments(),
+  payments: () => loadPayments(),
+  users: () => loadUsers(),
+  media: () => loadMedia(),
+};
+
+function setPageChrome(panel) {
+  const title = panel?.dataset.title || "Proyecto H";
+  const eyebrow = panel?.dataset.eyebrow || "Operaciones clínicas";
+  const lead = panel?.dataset.lead || "";
+  const titleEl = document.getElementById("page-title");
+  const eyebrowEl = document.getElementById("page-eyebrow");
+  const leadEl = document.getElementById("page-lead");
+  if (titleEl) titleEl.textContent = title;
+  if (eyebrowEl) eyebrowEl.textContent = eyebrow;
+  if (leadEl) leadEl.textContent = lead;
+  document.title = `${title} · Proyecto H`;
+}
+
+function navigateTo(tab) {
+  if (!tab) return;
+  document.querySelectorAll("[data-tab]").forEach((el) => {
+    el.classList.toggle("active", el.dataset.tab === tab);
+  });
   document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === `panel-${tab}`));
-  if (tab === "dashboard") loadDashboard();
-  if (tab === "doctors") loadDoctors();
-  if (tab === "patients") loadPatients();
-  if (tab === "schedules") loadSchedules();
-  if (tab === "appointments") loadAppointments();
-  if (tab === "payments") loadPayments();
+  const panel = document.getElementById(`panel-${tab}`);
+  setPageChrome(panel);
+  const nav = document.getElementById("primary-nav");
+  const toggle = document.getElementById("nav-toggle");
+  if (nav) nav.classList.remove("is-open");
+  if (toggle) toggle.setAttribute("aria-expanded", "false");
+  PAGE_LOADERS[tab]?.();
+}
+
+document.getElementById("tabs")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-tab]");
+  if (!btn) return;
+  navigateTo(btn.dataset.tab);
 });
+
+document.getElementById("sidebar-nav")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-tab]");
+  if (!btn) return;
+  navigateTo(btn.dataset.tab);
+});
+
+document.querySelector(".brand")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  navigateTo("dashboard");
+});
+
+document.getElementById("nav-toggle")?.addEventListener("click", () => {
+  const nav = document.getElementById("primary-nav");
+  const toggle = document.getElementById("nav-toggle");
+  const open = nav?.classList.toggle("is-open");
+  toggle?.setAttribute("aria-expanded", open ? "true" : "false");
+});
+
+(() => {
+  const dateEl = document.getElementById("utility-date");
+  if (dateEl) {
+    dateEl.textContent = new Date().toLocaleDateString("es-MX", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
+  const yearEl = document.getElementById("footer-year");
+  if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+})();
 
 // Dashboard
 async function loadDashboard() {
@@ -531,5 +631,26 @@ window.updatePayment = async (id, status) => {
   }
 };
 
+async function loadUsers() {
+  const accounts = [
+    { email: "emilio@farma", role: "Administrador", name: "Emilio Farma", access: "Control total" },
+    { email: "director@farma", role: "Director", name: "Laura Mendoza", access: "Supervisión y reportes" },
+    { email: "doctor@farma", role: "Doctor", name: "Dr. Andrés Vega", access: "Agenda clínica propia" },
+    { email: "paciente@farma", role: "Paciente", name: "Sofía Ramírez", access: "Citas y pagos propios" },
+  ];
+  const el = document.getElementById("users-table");
+  if (!el) return;
+  el.innerHTML = `<table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Permisos</th></tr></thead><tbody>
+    ${accounts.map((a) => `<tr><td>${a.name}</td><td>${a.email}</td><td><span class="role-pill">${a.role}</span></td><td>${a.access}</td></tr>`).join("")}
+  </tbody></table>`;
+}
+
+let _mediaRefresh = null;
+async function loadMedia() {
+  if (!_mediaRefresh) _mediaRefresh = bindMediaPanel();
+  await _mediaRefresh();
+}
+
 // Init
+setPageChrome(document.getElementById("panel-dashboard"));
 loadDashboard();

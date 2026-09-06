@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body data-role="patient">
+  <script id="boot-user" type="application/json">{{ user | tojson }}</script>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <div id="app-loader" class="app-loader" hidden><div class="app-loader__panel"><div class="loader"><span class="loader__ring"></span></div><p id="app-loader-text">Cargando…</p></div></div>
+
+  <div class="utility-bar"><div class="container utility-bar__inner">
+    <span class="utility-bar__item">Portal del paciente</span>
+    <div class="utility-bar__links">
+      <span id="utility-date"></span>
+      {% include "partials/profile_menu.html" %}
+    </div>
+  </div></div>
+
+  <header class="site-header"><div class="container site-header__inner">
+    <a class="brand" href="/app/patient"><span class="brand__mark"></span><span class="brand__text"><span class="brand__name">Proyecto H</span><span class="brand__tag">Paciente</span></span></a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"><span class="nav-toggle__bar"></span><span class="nav-toggle__bar"></span></button>
+    <nav class="primary-nav" id="primary-nav"><ul class="primary-nav__list" id="tabs">
+      <li><button type="button" class="nav-link active" data-tab="dashboard">Inicio</button></li>
+      <li><button type="button" class="nav-link" data-tab="book">Agendar</button></li>
+      <li><button type="button" class="nav-link" data-tab="appointments">Mis citas</button></li>
+      <li><button type="button" class="nav-link" data-tab="payments">Mis pagos</button></li>
+      <li><button type="button" class="nav-link" data-tab="profile">Mi perfil</button></li>
+    </ul></nav>
+  </div></header>
+
+  <section class="page-hero"><div class="container page-hero__inner">
+    <p class="page-hero__eyebrow" id="page-eyebrow">Atención al paciente</p>
+    <h1 class="page-hero__title" id="page-title">Bienvenida</h1>
+    <p class="page-hero__lead" id="page-lead">Agende citas, consulte su historial y revise el estado de sus pagos.</p>
+  </div></section>
+
+  <div class="layout"><div class="container layout__grid">
+    <aside class="sidebar"><p class="sidebar__label">Paciente</p>
+      <ul class="sidebar__nav" id="sidebar-nav">
+        <li><button type="button" class="sidebar-link active" data-tab="dashboard">Inicio</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="book">Agendar</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="appointments">Mis citas</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="payments">Mis pagos</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="profile">Mi perfil</button></li>
+      </ul>
+      <div class="sidebar__note"><strong>Su acceso</strong><p>Solo ve y gestiona su propia información clínica y de cobro.</p></div>
+    </aside>
+
+    <main class="content">
+      <section id="panel-dashboard" class="panel active" data-title="Bienvenida" data-eyebrow="Atención al paciente" data-lead="Agende citas, consulte su historial y revise el estado de sus pagos.">
+        <div class="stats-grid" style="grid-template-columns: repeat(2, minmax(0,1fr));">
+          <article class="stat-card"><div class="stat-card__value" id="pat-stat-appts">—</div><div class="stat-card__label">Citas programadas</div></article>
+          <article class="stat-card accent"><div class="stat-card__value" id="pat-stat-pending">—</div><div class="stat-card__label">Pagos pendientes</div></article>
+        </div>
+        <div class="surface"><header class="surface__head"><h2>Próximas citas</h2></header><div class="surface__body" id="patient-upcoming"></div></div>
+      </section>
+
+      <section id="panel-book" class="panel" data-title="Agendar cita" data-eyebrow="Reservas" data-lead="Elija doctor, fecha y horario disponible.">
+        <div class="surface"><header class="surface__head"><h2>Nueva cita</h2></header>
+          <div class="surface__body">
+            <form id="patient-book-form" class="form-grid">
+              <label>Doctor<select id="pat-doctor" required></select></label>
+              <label>Fecha<input type="date" id="pat-date" required></label>
+              <label>Horario<select id="pat-slot" required><option value="">Seleccione doctor y fecha</option></select></label>
+              <label>Notas<textarea id="pat-notes" rows="1"></textarea></label>
+              <div class="form-actions"><button type="submit" class="btn btn-primary">Confirmar cita</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-appointments" class="panel" data-title="Mis citas" data-eyebrow="Historial" data-lead="Citas asociadas a su expediente.">
+        <div class="surface"><header class="surface__head"><h2>Historial de citas</h2></header><div class="surface__body" id="patient-appointments"></div></div>
+      </section>
+
+      <section id="panel-payments" class="panel" data-title="Mis pagos" data-eyebrow="Cobros" data-lead="Estados de pago de sus consultas.">
+        <div class="surface"><header class="surface__head"><h2>Pagos</h2></header><div class="surface__body" id="patient-payments"></div></div>
+      </section>
+
+      <section id="panel-profile" class="panel" data-title="Mi perfil" data-eyebrow="Expediente" data-lead="Datos básicos de su cuenta de paciente.">
+        <div class="surface"><header class="surface__head"><h2>Datos personales</h2></header><div class="surface__body" id="patient-profile"></div></div>
+      </section>
+    </main>
+  </div></div>
+
+  <footer class="site-footer"><div class="container site-footer__base"><span>Proyecto H · Portal del paciente</span></div></footer>
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/profile-menu.js"></script>
+  <script src="/static/js/patient.js"></script>
+</body>
+</html>

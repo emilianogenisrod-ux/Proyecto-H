@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="docs-body">
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <header class="docs-top">
+    <div class="container docs-top__inner">
+      <a class="brand" href="{{ home_url }}">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__text">
+          <span class="brand__name">Proyecto H</span>
+          <span class="brand__tag">Documentación</span>
+        </span>
+      </a>
+      <nav class="docs-top__nav">
+        <a href="{{ home_url }}">Volver al panel</a>
+        <a href="/docs" target="_blank" rel="noopener">OpenAPI / Swagger</a>
+        <a href="/logout">Cerrar sesión</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container docs-layout">
+    <aside class="docs-toc" aria-label="Índice">
+      <p class="docs-toc__title">Contenido</p>
+      <ol>
+        <li><a href="#overview">1. Visión del sistema</a></li>
+        <li><a href="#stack">2. Stack tecnológico (Python)</a></li>
+        <li><a href="#architecture">3. Arquitectura</a></li>
+        <li><a href="#flow">4. Cómo funciona</a></li>
+        <li><a href="#database">5. Base de datos y tablas</a></li>
+        <li><a href="#ddl">6. CREATE TABLE</a></li>
+        <li><a href="#queries">7. SELECT / lectura ORM</a></li>
+        <li><a href="#apis">8. APIs REST</a></li>
+        <li><a href="#consume">9. Cómo consumir las APIs</a></li>
+        <li><a href="#envs">10. Entornos y conexión</a></li>
+        <li><a href="#roles">11. Roles y paneles</a></li>
+        <li><a href="#media">12. Medios</a></li>
+      </ol>
+    </aside>
+
+    <main class="docs-main">
+      <section class="docs-hero" id="overview">
+        <p class="docs-kicker">Manual técnico · Proyecto H</p>
+        <h1>Documentación del sistema</h1>
+        <p class="docs-lead">
+          Gestor de citas hospitalarias: doctores, pacientes, horarios, citas, pagos y medios.
+          Backend 100&nbsp;% <strong>Python</strong> con FastAPI + SQLAlchemy + SQLite.
+          Interfaz web (HTML/CSS/JS) consumiendo la API REST del mismo proceso.
+        </p>
+        <p class="docs-meta">Usuario: {{ user.name }} · {{ user.role_label }} · {{ user.email }}</p>
+      </section>
+
+      <section class="docs-section" id="stack">
+        <h2>2. Stack tecnológico (Python)</h2>
+        <div class="docs-grid-2">
+          <article class="docs-card">
+            <h3>Backend (Python)</h3>
+            <ul>
+              <li><strong>Python 3.11+</strong> — lenguaje del servidor</li>
+              <li><strong>FastAPI</strong> — API HTTP y rutas HTML</li>
+              <li><strong>Uvicorn</strong> — servidor ASGI</li>
+              <li><strong>SQLAlchemy 2</strong> — ORM y DDL</li>
+              <li><strong>Pydantic / pydantic-settings</strong> — validación y config</li>
+              <li><strong>Jinja2</strong> — plantillas HTML del servidor</li>
+              <li><strong>SQLite</strong> — base local (`data/hospital.db`)</li>
+              <li><strong>Starlette SessionMiddleware</strong> — sesiones firmadas</li>
+            </ul>
+          </article>
+          <article class="docs-card">
+            <h3>Frontend (capa de presentación)</h3>
+            <ul>
+              <li>Plantillas Jinja2 servidas por FastAPI</li>
+              <li>HTML5 + CSS + JavaScript (fetch a `/api/*`)</li>
+              <li>No hay Node/React/Java en el backend</li>
+              <li>Docs interactivas: <code>/docs</code> (Swagger generado por FastAPI)</li>
+            </ul>
+          </article>
+        </div>
+        <p class="docs-note">
+          Si se requiere otro motor (PostgreSQL/MySQL), solo cambia
+          <code>DATABASE_URL</code> en configuración; el código ORM en Python se mantiene.
+        </p>
+      </section>
+
+      <section class="docs-section" id="architecture">
+        <h2>3. Arquitectura</h2>
+        <pre class="docs-code">Cliente (navegador)
+   │  HTML / JS  →  fetch JSON
+   ▼
+FastAPI (Python) ──────────────────────────────┐
+   ├── Rutas HTML: /login, /app/*, /documentacion
+   ├── API REST:   /api/doctors, /appointments…
+   ├── Auth:       sesión cookie firmada
+   └── Servicios:  availability (slots)
+          │
+          ▼
+   SQLAlchemy ORM (Python)
+          │
+          ▼
+   SQLite  →  data/hospital.db
+   Archivos medios → media/images|videos|avatars</pre>
+        <h3>Capas del código</h3>
+        <ul>
+          <li><code>app/main.py</code> — arranque, middleware, rutas de páginas</li>
+          <li><code>app/routers/*.py</code> — endpoints REST</li>
+          <li><code>app/models.py</code> — tablas ORM</li>
+          <li><code>app/schemas.py</code> — contratos Pydantic request/response</li>
+          <li><code>app/database.py</code> — engine, sesión, <code>create_all</code></li>
+          <li><code>app/services/availability.py</code> — cálculo de slots</li>
+          <li><code>app/auth.py</code> / <code>app/users.py</code> — autenticación y roles</li>
+        </ul>
+      </section>
+
+      <section class="docs-section" id="flow">
+        <h2>4. Cómo funciona el sistema</h2>
+        <ol class="docs-steps">
+          <li><strong>Arranque:</strong> Uvicorn carga <code>app.main:app</code>. En el lifespan se ejecuta <code>init_db()</code> (<code>Base.metadata.create_all</code>), seed demo y entidades de roles.</li>
+          <li><strong>Login:</strong> POST <code>/login</code> valida email/password en catálogo Python, guarda usuario en sesión y redirige al panel según rol.</li>
+          <li><strong>Panel:</strong> cada rol tiene vista propia (<code>/app/admin</code>, <code>/director</code>, <code>/doctor</code>, <code>/patient</code>) que llama a <code>/api/*</code>.</li>
+          <li><strong>Citas:</strong> al crear appointment se valida solape, se inserta fila y se crea <code>payments</code> en estado <code>pending</code>.</li>
+          <li><strong>Slots:</strong> se leen <code>schedule_blocks</code> del doctor y se restan citas activas (servicio Python).</li>
+          <li><strong>Medios:</strong> multipart a disco + metadatos en <code>media_assets</code>; URL pública <code>/media/...</code>.</li>
+        </ol>
+      </section>
+
+      <section class="docs-section" id="database">
+        <h2>5. Base de datos y tablas</h2>
+        <p>Motor por defecto: <strong>SQLite</strong> en <code>sqlite:///./data/hospital.db</code>.</p>
+        <p>Creación automática al iniciar:</p>
+        <pre class="docs-code"># app/database.py
+Base.metadata.create_all(bind=engine)</pre>
+        <div class="docs-table-wrap">
+          <table>
+            <thead><tr><th>Tabla</th><th>Propósito</th></tr></thead>
+            <tbody>
+              {% for t in tables %}
+              <tr><td><code>{{ t.name }}</code></td><td>{{ t.purpose }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <h3>Relaciones</h3>
+        <ul>
+          <li><code>doctors</code> 1—N <code>schedule_blocks</code>, <code>appointments</code></li>
+          <li><code>patients</code> 1—N <code>appointments</code></li>
+          <li><code>appointments</code> 1—1 <code>payments</code></li>
+        </ul>
+      </section>
+
+      <section class="docs-section" id="ddl">
+        <h2>6. CREATE TABLE (DDL generado desde SQLAlchemy)</h2>
+        <p>Estas sentencias se generan en tiempo de ejecución desde los modelos Python:</p>
+        {% for stmt in ddl %}
+        <h3><code>{{ stmt.name }}</code></h3>
+        <pre class="docs-code">{{ stmt.sql }}</pre>
+        {% endfor %}
+      </section>
+
+      <section class="docs-section" id="queries">
+        <h2>7. Extracción de información (SELECT / ORM)</h2>
+        <p>
+          No se escriben SQL crudos en la mayoría de rutas: SQLAlchemy traduce consultas Python a SQL.
+          Ejemplos equivalentes:
+        </p>
+        {% for t in tables %}
+        <article class="docs-card docs-card--tight">
+          <h3>{{ t.name }}</h3>
+          <p><strong>SQL equivalente</strong></p>
+          <pre class="docs-code">{{ t.select }}</pre>
+          <p><strong>Python (SQLAlchemy)</strong></p>
+          <pre class="docs-code">{{ t.orm }}</pre>
+        </article>
+        {% endfor %}
+        <h3>Patrón en routers</h3>
+        <pre class="docs-code">def list_items(db: Session = Depends(get_db)):
+    return db.query(Model).order_by(Model.id).all()
+
+# Inserción
+obj = Model(**payload.model_dump())
+db.add(obj)
+db.commit()
+db.refresh(obj)</pre>
+      </section>
+
+      <section class="docs-section" id="apis">
+        <h2>8. Catálogo de APIs REST</h2>
+        <p>Base URL local: <code>http://127.0.0.1:8000</code>. Prefijo de negocio: <code>/api</code>.</p>
+        <div class="docs-table-wrap">
+          <table>
+            <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th><th>Auth</th></tr></thead>
+            <tbody>
+              {% for e in endpoints %}
+              <tr>
+                <td><span class="method method--{{ e.method|lower }}">{{ e.method }}</span></td>
+                <td><code>{{ e.path }}</code></td>
+                <td>{{ e.desc }}</td>
+                <td>{{ e.auth }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="docs-section" id="consume">
+        <h2>9. Cómo consumir las APIs</h2>
+        <h3>Desde el navegador (JS del panel)</h3>
+        <pre class="docs-code">const res = await fetch('/api/appointments?status=scheduled', {
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'same-origin' // envía cookie de sesión
+});
+const data = await res.json();</pre>
+        <h3>Desde Python (cliente)</h3>
+        <pre class="docs-code">import httpx
+
+with httpx.Client(base_url="http://127.0.0.1:8000") as client:
+    client.post("/login", data={"email": "emilio@farma", "password": "emilio123"})
+    r = client.get("/api/doctors")
+    print(r.json())</pre>
+        <h3>Crear cita (JSON)</h3>
+        <pre class="docs-code">POST /api/appointments
+{
+  "doctor_id": 1,
+  "patient_id": 2,
+  "starts_at": "2026-09-10T09:00:00",
+  "notes": "Control"
+}</pre>
+        <h3>Subir medio (multipart)</h3>
+        <pre class="docs-code">POST /api/media/upload
+Content-Type: multipart/form-data
+file=@imagen.png
+title=Banner
+kind=image</pre>
+        <p>Documentación interactiva: <a href="/docs" target="_blank" rel="noopener">/docs</a> · OpenAPI JSON: <a href="/openapi.json" target="_blank" rel="noopener">/openapi.json</a></p>
+      </section>
+
+      <section class="docs-section" id="envs">
+        <h2>10. Entornos y conexión a sistemas</h2>
+        <div class="docs-table-wrap">
+          <table>
+            <thead><tr><th>Entorno</th><th>Cómo se conecta</th><th>Variables / notas</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Local (dev)</td>
+                <td><code>uvicorn app.main:app --reload --host 127.0.0.1 --port 8000</code></td>
+                <td><code>DATABASE_URL=sqlite:///./data/hospital.db</code></td>
+              </tr>
+              <tr>
+                <td>Staging / Prod</td>
+                <td>Mismo app Python detrás de reverse proxy (nginx) → Uvicorn/Gunicorn+UvicornWorker</td>
+                <td>Cambiar <code>SESSION_SECRET</code>, HTTPS, <code>DATABASE_URL</code> a PostgreSQL si aplica</td>
+              </tr>
+              <tr>
+                <td>Base de datos externa</td>
+                <td>SQLAlchemy lee <code>settings.DATABASE_URL</code></td>
+                <td>Ej. <code>postgresql+psycopg://user:pass@host:5432/proyectorh</code></td>
+              </tr>
+              <tr>
+                <td>Almacenamiento medios</td>
+                <td>Filesystem local montado en <code>/media</code></td>
+                <td>En cloud: sustituir por S3/Azure Blob manteniendo la API Python</td>
+              </tr>
+              <tr>
+                <td>Integraciones HIS/EHR</td>
+                <td>No incluidas en MVP; se añadirían clientes HTTP Python (httpx) en <code>app/integrations/</code></td>
+                <td>Misma API interna como fachada</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <pre class="docs-code"># Configuración (Python / pydantic-settings)
+# app/config.py → Settings
+DATABASE_URL = "sqlite:///./data/hospital.db"
+SESSION_SECRET = "cambiar-en-produccion"
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
+MAX_VIDEO_BYTES = 50 * 1024 * 1024</pre>
+      </section>
+
+      <section class="docs-section" id="roles">
+        <h2>11. Roles y paneles</h2>
+        <div class="docs-table-wrap">
+          <table>
+            <thead><tr><th>Rol</th><th>Usuario demo</th><th>Panel</th><th>Alcance</th></tr></thead>
+            <tbody>
+              <tr><td>Administrador</td><td>emilio@farma</td><td>/app/admin</td><td>CRUD completo + medios + usuarios</td></tr>
+              <tr><td>Director</td><td>director@farma</td><td>/app/director</td><td>Supervisión, reportes, medios</td></tr>
+              <tr><td>Doctor</td><td>doctor@farma</td><td>/app/doctor</td><td>Agenda y citas propias</td></tr>
+              <tr><td>Paciente</td><td>paciente@farma</td><td>/app/patient</td><td>Agendar y ver datos propios</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="docs-section" id="media">
+        <h2>12. Medios</h2>
+        <ul>
+          <li>Upload: <code>POST /api/media/upload</code> (Python FastAPI + <code>UploadFile</code>)</li>
+          <li>Disco: <code>media/images</code>, <code>media/videos</code>, <code>media/avatars</code></li>
+          <li>Metadatos: tabla <code>media_assets</code></li>
+          <li>Servido estático: <code>/media/...</code></li>
+        </ul>
+      </section>
+
+      <footer class="docs-footer">
+        <p>Proyecto H · Backend Python · Generado para el entorno de {{ user.role_label|lower }}.</p>
+        <p><a href="{{ home_url }}">← Regresar al panel</a></p>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/static/js/profile-menu.js"></script>
+</body>
+</html>

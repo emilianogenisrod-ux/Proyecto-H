@@ -4,175 +4,321 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-  <header>
-    <h1>🏥 Gestor de Citas Hospitalarias</h1>
-    <p>Sistema de gestión de doctores, pacientes, horarios, citas y pagos</p>
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <!-- Overlay de carga in-app -->
+  <div id="app-loader" class="app-loader" hidden aria-hidden="true">
+    <div class="app-loader__panel" role="status" aria-live="polite">
+      <div class="loader" aria-hidden="true">
+        <span class="loader__ring"></span>
+        <span class="loader__ring loader__ring--delay"></span>
+      </div>
+      <p id="app-loader-text">Cargando…</p>
+    </div>
+  </div>
+
+  <!-- Utilidad superior -->
+  <div class="utility-bar">
+    <div class="container utility-bar__inner">
+      <span class="utility-bar__item">Gestión hospitalaria · Operaciones</span>
+      <div class="utility-bar__links">
+        <span id="utility-date"></span>
+        {% include "partials/profile_menu.html" %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Cabecera institucional -->
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="#" data-nav="dashboard" aria-label="Proyecto H — inicio">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__text">
+          <span class="brand__name">Proyecto H</span>
+          <span class="brand__tag">Gestor de Citas</span>
+        </span>
+      </a>
+
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+        <span class="sr-only">Menú</span>
+      </button>
+
+      <nav class="primary-nav" id="primary-nav" aria-label="Principal">
+        <ul class="primary-nav__list" id="tabs">
+          <li><button type="button" class="nav-link active" data-tab="dashboard">Inicio</button></li>
+          <li><button type="button" class="nav-link" data-tab="doctors">Doctores</button></li>
+          <li><button type="button" class="nav-link" data-tab="patients">Pacientes</button></li>
+          <li><button type="button" class="nav-link" data-tab="schedules">Horarios</button></li>
+          <li><button type="button" class="nav-link" data-tab="appointments">Citas</button></li>
+          <li><button type="button" class="nav-link" data-tab="payments">Pagos</button></li>
+        </ul>
+      </nav>
+    </div>
   </header>
 
-  <nav class="tabs" id="tabs">
-    <button data-tab="dashboard" class="active">Dashboard</button>
-    <button data-tab="doctors">Doctores</button>
-    <button data-tab="patients">Pacientes</button>
-    <button data-tab="schedules">Horarios</button>
-    <button data-tab="appointments">Citas</button>
-    <button data-tab="payments">Pagos</button>
-  </nav>
+  <!-- Franja de marca / contexto de página -->
+  <section class="page-hero" id="page-hero">
+    <div class="container page-hero__inner">
+      <p class="page-hero__eyebrow" id="page-eyebrow">Operaciones clínicas</p>
+      <h1 class="page-hero__title" id="page-title">Panel de control</h1>
+      <p class="page-hero__lead" id="page-lead">Resumen del día, citas próximas y estado de cobros.</p>
+    </div>
+  </section>
 
-  <main>
-    <!-- Dashboard -->
-    <section id="panel-dashboard" class="panel active">
-      <h2>Panel de control</h2>
-      <div class="stats-grid" id="stats-grid">
-        <div class="stat-card"><div class="value" id="stat-doctors">—</div><div class="label">Doctores activos</div></div>
-        <div class="stat-card"><div class="value" id="stat-patients">—</div><div class="label">Pacientes registrados</div></div>
-        <div class="stat-card"><div class="value" id="stat-today">—</div><div class="label">Citas hoy</div></div>
-        <div class="stat-card"><div class="value" id="stat-pending">—</div><div class="label">Pagos pendientes</div></div>
-      </div>
-      <div class="card">
-        <h3>Próximas citas</h3>
-        <div id="dashboard-appointments"></div>
-      </div>
-    </section>
-
-    <!-- Doctores -->
-    <section id="panel-doctors" class="panel">
-      <h2>Doctores</h2>
-      <div class="card">
-        <h3 id="doctor-form-title">Nuevo doctor</h3>
-        <form id="doctor-form" class="form-grid">
-          <input type="hidden" id="doctor-id">
-          <label>Nombre completo<input type="text" id="doctor-name" required></label>
-          <label>Especialidad<input type="text" id="doctor-specialty" required></label>
-          <label>Duración consulta (min)<input type="number" id="doctor-minutes" value="30" min="5" max="240" required></label>
-          <label>Tarifa default ($)<input type="number" id="doctor-fee" value="500" min="0" step="0.01" required></label>
-          <label class="checkbox-label"><input type="checkbox" id="doctor-active" checked> Activo</label>
-          <button type="submit" class="btn btn-primary">Guardar</button>
-          <button type="button" class="btn" id="doctor-cancel-edit" style="display:none">Cancelar edición</button>
-        </form>
-      </div>
-      <div class="card">
-        <div id="doctors-table"></div>
-      </div>
-    </section>
-
-    <!-- Pacientes -->
-    <section id="panel-patients" class="panel">
-      <h2>Pacientes</h2>
-      <div class="card">
-        <h3 id="patient-form-title">Nuevo paciente</h3>
-        <form id="patient-form" class="form-grid">
-          <input type="hidden" id="patient-id">
-          <label>Nombre completo<input type="text" id="patient-name" required></label>
-          <label>Documento<input type="text" id="patient-document" required></label>
-          <label>Teléfono<input type="text" id="patient-phone"></label>
-          <label>Email<input type="email" id="patient-email"></label>
-          <button type="submit" class="btn btn-primary">Guardar</button>
-          <button type="button" class="btn" id="patient-cancel-edit" style="display:none">Cancelar edición</button>
-        </form>
-      </div>
-      <div class="card">
-        <div id="patients-table"></div>
-      </div>
-    </section>
-
-    <!-- Horarios -->
-    <section id="panel-schedules" class="panel">
-      <h2>Horarios semanales</h2>
-      <div class="card">
-        <h3>Agregar bloque horario</h3>
-        <form id="schedule-form" class="form-grid">
-          <label>Doctor
-            <select id="schedule-doctor" required></select>
-          </label>
-          <label>Día
-            <select id="schedule-weekday" required>
-              <option value="0">Lunes</option>
-              <option value="1">Martes</option>
-              <option value="2">Miércoles</option>
-              <option value="3">Jueves</option>
-              <option value="4">Viernes</option>
-              <option value="5">Sábado</option>
-              <option value="6">Domingo</option>
-            </select>
-          </label>
-          <label>Inicio<input type="time" id="schedule-start" required></label>
-          <label>Fin<input type="time" id="schedule-end" required></label>
-          <button type="submit" class="btn btn-primary">Agregar</button>
-        </form>
-      </div>
-      <div class="card">
-        <div class="filters">
-          <label>Ver horarios de
-            <select id="schedule-filter-doctor"></select>
-          </label>
+  <!-- Contenido principal -->
+  <div class="layout">
+    <div class="container layout__grid">
+      <aside class="sidebar" aria-label="Accesos rápidos">
+        <p class="sidebar__label">Módulos</p>
+        <ul class="sidebar__nav" id="sidebar-nav">
+          <li><button type="button" class="sidebar-link active" data-tab="dashboard">Panel</button></li>
+          <li><button type="button" class="sidebar-link" data-tab="doctors">Doctores</button></li>
+          <li><button type="button" class="sidebar-link" data-tab="patients">Pacientes</button></li>
+          <li><button type="button" class="sidebar-link" data-tab="schedules">Horarios</button></li>
+          <li><button type="button" class="sidebar-link" data-tab="appointments">Citas</button></li>
+          <li><button type="button" class="sidebar-link" data-tab="payments">Pagos</button></li>
+        </ul>
+        <div class="sidebar__note">
+          <strong>Flujo sugerido</strong>
+          <ol>
+            <li>Registrar doctor y agenda</li>
+            <li>Dar de alta paciente</li>
+            <li>Agendar y cobrar</li>
+          </ol>
         </div>
-        <div id="schedules-table"></div>
-      </div>
-      <div class="card">
-        <h3>Consultar slots disponibles</h3>
-        <div class="filters">
-          <label>Doctor<select id="slots-doctor"></select></label>
-          <label>Fecha<input type="date" id="slots-date"></label>
-          <button class="btn btn-primary" id="slots-search">Buscar slots</button>
-        </div>
-        <div id="slots-list"></div>
-      </div>
-    </section>
+      </aside>
 
-    <!-- Citas -->
-    <section id="panel-appointments" class="panel">
-      <h2>Citas</h2>
-      <div class="card">
-        <h3>Nueva cita</h3>
-        <form id="appointment-form" class="form-grid">
-          <label>Doctor<select id="appt-doctor" required></select></label>
-          <label>Paciente<select id="appt-patient" required></select></label>
-          <label>Fecha<input type="date" id="appt-date" required></label>
-          <label>Horario<select id="appt-slot" required><option value="">Seleccione doctor y fecha</option></select></label>
-          <label>Notas<textarea id="appt-notes" rows="1"></textarea></label>
-          <button type="submit" class="btn btn-primary">Agendar cita</button>
-        </form>
-      </div>
-      <div class="card">
-        <div class="filters">
-          <label>Doctor<select id="appt-filter-doctor"><option value="">Todos</option></select></label>
-          <label>Estado<select id="appt-filter-status">
-            <option value="">Todos</option>
-            <option value="scheduled">Programada</option>
-            <option value="completed">Completada</option>
-            <option value="cancelled">Cancelada</option>
-            <option value="no_show">No asistió</option>
-          </select></label>
-          <button class="btn btn-primary" id="appt-filter-btn">Filtrar</button>
-        </div>
-        <div id="appointments-table"></div>
-      </div>
-    </section>
+      <main class="content" id="main-content">
+        <!-- Dashboard -->
+        <section id="panel-dashboard" class="panel active" data-title="Panel de control" data-eyebrow="Operaciones clínicas" data-lead="Resumen del día, citas próximas y estado de cobros.">
+          <div class="stats-grid" id="stats-grid">
+            <article class="stat-card">
+              <div class="stat-card__value" id="stat-doctors">—</div>
+              <div class="stat-card__label">Doctores activos</div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-card__value" id="stat-patients">—</div>
+              <div class="stat-card__label">Pacientes registrados</div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-card__value" id="stat-today">—</div>
+              <div class="stat-card__label">Citas hoy</div>
+            </article>
+            <article class="stat-card accent">
+              <div class="stat-card__value" id="stat-pending">—</div>
+              <div class="stat-card__label">Pagos pendientes</div>
+            </article>
+          </div>
+          <div class="surface">
+            <header class="surface__head">
+              <h2>Próximas citas</h2>
+            </header>
+            <div class="surface__body" id="dashboard-appointments"></div>
+          </div>
+        </section>
 
-    <!-- Pagos -->
-    <section id="panel-payments" class="panel">
-      <h2>Pagos</h2>
-      <div class="card">
-        <div class="filters">
-          <label>Estado<select id="pay-filter-status">
-            <option value="">Todos</option>
-            <option value="pending">Pendiente</option>
-            <option value="paid">Pagado</option>
-            <option value="partial">Parcial</option>
-            <option value="exempt">Exento</option>
-            <option value="refund_pending">Reembolso pendiente</option>
-          </select></label>
-          <label>Doctor<select id="pay-filter-doctor"><option value="">Todos</option></select></label>
-          <button class="btn btn-primary" id="pay-filter-btn">Filtrar</button>
-        </div>
-        <div id="payments-table"></div>
-      </div>
-    </section>
-  </main>
+        <!-- Doctores -->
+        <section id="panel-doctors" class="panel" data-title="Doctores" data-eyebrow="Directorio clínico" data-lead="Alta, edición y estado de los profesionales de la salud.">
+          <div class="surface">
+            <header class="surface__head">
+              <h2 id="doctor-form-title">Nuevo doctor</h2>
+            </header>
+            <div class="surface__body">
+              <form id="doctor-form" class="form-grid">
+                <input type="hidden" id="doctor-id">
+                <label>Nombre completo<input type="text" id="doctor-name" required></label>
+                <label>Especialidad<input type="text" id="doctor-specialty" required></label>
+                <label>Duración consulta (min)<input type="number" id="doctor-minutes" value="30" min="5" max="240" required></label>
+                <label>Tarifa default ($)<input type="number" id="doctor-fee" value="500" min="0" step="0.01" required></label>
+                <label class="checkbox-label"><input type="checkbox" id="doctor-active" checked> Activo</label>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">Guardar</button>
+                  <button type="button" class="btn btn-ghost" id="doctor-cancel-edit" style="display:none">Cancelar edición</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="surface">
+            <header class="surface__head"><h2>Listado</h2></header>
+            <div class="surface__body" id="doctors-table"></div>
+          </div>
+        </section>
 
+        <!-- Pacientes -->
+        <section id="panel-patients" class="panel" data-title="Pacientes" data-eyebrow="Expediente básico" data-lead="Registro y actualización de pacientes atendidos.">
+          <div class="surface">
+            <header class="surface__head">
+              <h2 id="patient-form-title">Nuevo paciente</h2>
+            </header>
+            <div class="surface__body">
+              <form id="patient-form" class="form-grid">
+                <input type="hidden" id="patient-id">
+                <label>Nombre completo<input type="text" id="patient-name" required></label>
+                <label>Documento<input type="text" id="patient-document" required></label>
+                <label>Teléfono<input type="text" id="patient-phone"></label>
+                <label>Email<input type="email" id="patient-email"></label>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">Guardar</button>
+                  <button type="button" class="btn btn-ghost" id="patient-cancel-edit" style="display:none">Cancelar edición</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="surface">
+            <header class="surface__head"><h2>Listado</h2></header>
+            <div class="surface__body" id="patients-table"></div>
+          </div>
+        </section>
+
+        <!-- Horarios -->
+        <section id="panel-schedules" class="panel" data-title="Horarios" data-eyebrow="Disponibilidad" data-lead="Bloques semanales y consulta de slots libres.">
+          <div class="surface">
+            <header class="surface__head"><h2>Agregar bloque horario</h2></header>
+            <div class="surface__body">
+              <form id="schedule-form" class="form-grid">
+                <label>Doctor<select id="schedule-doctor" required></select></label>
+                <label>Día
+                  <select id="schedule-weekday" required>
+                    <option value="0">Lunes</option>
+                    <option value="1">Martes</option>
+                    <option value="2">Miércoles</option>
+                    <option value="3">Jueves</option>
+                    <option value="4">Viernes</option>
+                    <option value="5">Sábado</option>
+                    <option value="6">Domingo</option>
+                  </select>
+                </label>
+                <label>Inicio<input type="time" id="schedule-start" required></label>
+                <label>Fin<input type="time" id="schedule-end" required></label>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">Agregar</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="surface">
+            <header class="surface__head"><h2>Agenda semanal</h2></header>
+            <div class="surface__body">
+              <div class="filters">
+                <label>Ver horarios de<select id="schedule-filter-doctor"></select></label>
+              </div>
+              <div id="schedules-table"></div>
+            </div>
+          </div>
+          <div class="surface">
+            <header class="surface__head"><h2>Consultar slots disponibles</h2></header>
+            <div class="surface__body">
+              <div class="filters">
+                <label>Doctor<select id="slots-doctor"></select></label>
+                <label>Fecha<input type="date" id="slots-date"></label>
+                <button class="btn btn-primary" id="slots-search" type="button">Buscar slots</button>
+              </div>
+              <div id="slots-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Citas -->
+        <section id="panel-appointments" class="panel" data-title="Citas" data-eyebrow="Agendamiento" data-lead="Reservar, filtrar, cancelar y reprogramar consultas.">
+          <div class="surface">
+            <header class="surface__head"><h2>Nueva cita</h2></header>
+            <div class="surface__body">
+              <form id="appointment-form" class="form-grid">
+                <label>Doctor<select id="appt-doctor" required></select></label>
+                <label>Paciente<select id="appt-patient" required></select></label>
+                <label>Fecha<input type="date" id="appt-date" required></label>
+                <label>Horario<select id="appt-slot" required><option value="">Seleccione doctor y fecha</option></select></label>
+                <label>Notas<textarea id="appt-notes" rows="1"></textarea></label>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">Agendar cita</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="surface">
+            <header class="surface__head"><h2>Listado de citas</h2></header>
+            <div class="surface__body">
+              <div class="filters">
+                <label>Doctor<select id="appt-filter-doctor"><option value="">Todos</option></select></label>
+                <label>Estado<select id="appt-filter-status">
+                  <option value="">Todos</option>
+                  <option value="scheduled">Programada</option>
+                  <option value="completed">Completada</option>
+                  <option value="cancelled">Cancelada</option>
+                  <option value="no_show">No asistió</option>
+                </select></label>
+                <button class="btn btn-primary" id="appt-filter-btn" type="button">Filtrar</button>
+              </div>
+              <div id="appointments-table"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Pagos -->
+        <section id="panel-payments" class="panel" data-title="Pagos" data-eyebrow="Agenda de cobros" data-lead="Seguimiento de estados de pago asociados a cada cita.">
+          <div class="surface">
+            <header class="surface__head"><h2>Agenda de pagos</h2></header>
+            <div class="surface__body">
+              <div class="filters">
+                <label>Estado<select id="pay-filter-status">
+                  <option value="">Todos</option>
+                  <option value="pending">Pendiente</option>
+                  <option value="paid">Pagado</option>
+                  <option value="partial">Parcial</option>
+                  <option value="exempt">Exento</option>
+                  <option value="refund_pending">Reembolso pendiente</option>
+                </select></label>
+                <label>Doctor<select id="pay-filter-doctor"><option value="">Todos</option></select></label>
+                <button class="btn btn-primary" id="pay-filter-btn" type="button">Filtrar</button>
+              </div>
+              <div id="payments-table"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Pie de página -->
+  <footer class="site-footer">
+    <div class="container site-footer__grid">
+      <div>
+        <p class="site-footer__brand">Proyecto H</p>
+        <p class="site-footer__desc">Plataforma de citas, agendas y cobros para operaciones hospitalarias.</p>
+      </div>
+      <div>
+        <p class="site-footer__heading">Módulos</p>
+        <ul>
+          <li>Doctores y especialidades</li>
+          <li>Horarios y disponibilidad</li>
+          <li>Citas y cancelaciones</li>
+          <li>Agenda de pagos</li>
+        </ul>
+      </div>
+      <div>
+        <p class="site-footer__heading">Recursos</p>
+        <ul>
+          <li><a href="/docs" target="_blank" rel="noopener">Documentación API</a></li>
+          <li><a href="https://github.com/emilianogenisrod-ux/Proyecto-H" target="_blank" rel="noopener">Repositorio</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__base">
+      <div class="container">
+        <span>© <span id="footer-year"></span> Proyecto H · Uso institucional</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/js/profile-menu.js"></script>
   <script src="/static/js/app.js"></script>
 </body>
 </html>
