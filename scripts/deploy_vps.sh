@@ -29,10 +29,10 @@ if [ -z "$POSTGRES_PASSWORD" ] || [ -z "$MINIO_ACCESS_KEY" ] || [ -z "$MINIO_SEC
   exit 1
 fi
 
-# Resolver hostname MinIO en la red swarm
-MINIO_HOST=$(docker service inspect minio_minio --format '{{.Spec.Name}}' 2>/dev/null || echo minio_minio)
-
-DATABASE_URL="postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@supabase_db:5432/postgres"
+# Alias DNS del servicio MinIO en iagenteknet
+MINIO_HOST=minio
+POSTGRES_PASSWORD_ENC=$(PGPASS="$POSTGRES_PASSWORD" python3 -c 'import os,urllib.parse; print(urllib.parse.quote(os.environ["PGPASS"], safe=""))')
+DATABASE_URL="postgresql+psycopg://postgres:${POSTGRES_PASSWORD_ENC}@supabase_db:5432/postgres"
 
 echo "==> Generando stack yaml"
 cat > /root/proyecto-h.yaml <<EOF
@@ -45,18 +45,17 @@ services:
       - iagenteknet
       - supabase_internal
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - SESSION_SECRET=${SESSION_SECRET}
-      - APP_TITLE=Gestor de Citas Hospitalarias
-      - MINIO_ENABLED=true
-      - MINIO_ENDPOINT=http://${MINIO_HOST}:9000
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-      - MINIO_BUCKET=hospital
-      - MINIO_SECURE=false
-      - MINIO_PUBLIC_BASE_URL=https://iagentekminioback.iagentek.com.mx
-      - SUPABASE_URL=https://iagenteksupabase.iagentek.com.mx
-    volumes:
+      - 'DATABASE_URL=${DATABASE_URL}'
+      - 'SESSION_SECRET=${SESSION_SECRET}'
+      - 'APP_TITLE=Gestor de Citas Hospitalarias'
+      - 'MINIO_ENABLED=true'
+      - 'MINIO_ENDPOINT=http://${MINIO_HOST}:9000'
+      - 'MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}'
+      - 'MINIO_SECRET_KEY=${MINIO_SECRET_KEY}'
+      - 'MINIO_BUCKET=hospital'
+      - 'MINIO_SECURE=false'
+      - 'MINIO_PUBLIC_BASE_URL=https://iagentekminioback.iagentek.com.mx'
+      - 'SUPABASE_URL=https://iagenteksupabase.iagentek.com.mx'    volumes:
       - proyecto_h_media:/app/media
       - proyecto_h_data:/app/data
     deploy:
