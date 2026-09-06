@@ -58,7 +58,8 @@ Abrir: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 | Rol | Correo | Contraseña | Panel |
 |-----|--------|------------|-------|
-| Administrador | `emilio@farma` | `emilio123` | `/app/admin` |
+| Administrador | `emiliano@farma` | `emiliano123` | `/app/admin` |
+| Administrador | `sara@farma` | `sara123` | `/app/admin` |
 | Director | `director@farma` | `director123` | `/app/director` |
 | Doctor | `doctor@farma` | `doctor123` | `/app/doctor` |
 | Paciente | `paciente@farma` | `paciente123` | `/app/patient` |

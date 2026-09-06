@@ -633,7 +633,8 @@ window.updatePayment = async (id, status) => {
 
 async function loadUsers() {
   const accounts = [
-    { email: "emilio@farma", role: "Administrador", name: "Emilio Farma", access: "Control total" },
+    { email: "emiliano@farma", role: "Administrador", name: "Emiliano Farma", access: "Control total" },
+    { email: "sara@farma", role: "Administrador", name: "Sara Farma", access: "Control total" },
     { email: "director@farma", role: "Director", name: "Laura Mendoza", access: "Supervisión y reportes" },
     { email: "doctor@farma", role: "Doctor", name: "Dr. Andrés Vega", access: "Agenda clínica propia" },
     { email: "paciente@farma", role: "Paciente", name: "Sofía Ramírez", access: "Citas y pagos propios" },
