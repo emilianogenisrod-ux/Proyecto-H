@@ -6,25 +6,33 @@
 
 /* ========== Tokens ========== */
 :root {
-  /* Marca */
+  /* Marca — rojo del login (homologado en toda la app) */
+  --brand: #b42318;
+  --brand-deep: #912018;
+  --brand-bright: #d92d20;
+  --brand-soft: #f8e4e2;
+  --brand-wash: #fdf2f1;
+  --brand-gradient: linear-gradient(145deg, #d92d20 0%, #b42318 55%, #912018 100%);
+
+  /* Neutros de apoyo */
   --mist: #90afc5;
   --stone: #336b87;
   --shadow: #2a3132;
-  --autumn: #763626;
+  --autumn: var(--brand);
   --mist-soft: #c5d7e4;
   --mist-wash: #e8f0f5;
   --stone-deep: #254d63;
-  --autumn-soft: #a45a45;
+  --autumn-soft: #c45a4f;
 
   /* Superficies */
-  --bg: #eef3f6;
+  --bg: #f6f2f1;
   --surface: #fafcfd;
   --surface-elevated: #ffffff;
   --text: var(--shadow);
   --text-muted: #5a6a6d;
-  --border: color-mix(in srgb, var(--mist) 55%, white);
-  --focus: color-mix(in srgb, var(--stone) 35%, transparent);
-  --danger: var(--autumn);
+  --border: color-mix(in srgb, var(--brand) 12%, #d8dde0);
+  --focus: color-mix(in srgb, var(--brand) 32%, transparent);
+  --danger: var(--brand);
   --success: #2f6b4f;
   --warning: #8a5a2b;
 
@@ -48,7 +56,6 @@
   --space-6: 2rem;
   --space-7: 3rem;
 
-  /* Breakpoints (referencia documental; media queries usan px) */
   --bp-sm: 520px;
   --bp-md: 760px;
   --bp-lg: 960px;
