@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body data-role="director">
+  <script id="boot-user" type="application/json">{{ user | tojson }}</script>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <div id="app-loader" class="app-loader" hidden><div class="app-loader__panel"><div class="loader"><span class="loader__ring"></span></div><p id="app-loader-text">Cargando…</p></div></div>
+
+  <div class="utility-bar"><div class="container utility-bar__inner">
+    <span class="utility-bar__item">Dirección hospitalaria</span>
+    <div class="utility-bar__links">
+      <span id="utility-date"></span>
+      {% include "partials/profile_menu.html" %}
+    </div>
+  </div></div>
+
+  <header class="site-header"><div class="container site-header__inner">
+    <a class="brand" href="/app/director"><span class="brand__mark"></span><span class="brand__text"><span class="brand__name">Proyecto H</span><span class="brand__tag">Dirección</span></span></a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"><span class="nav-toggle__bar"></span><span class="nav-toggle__bar"></span></button>
+    <nav class="primary-nav" id="primary-nav"><ul class="primary-nav__list" id="tabs">
+      <li><button type="button" class="nav-link active" data-tab="dashboard">Resumen</button></li>
+      <li><button type="button" class="nav-link" data-tab="appointments">Citas</button></li>
+      <li><button type="button" class="nav-link" data-tab="payments">Cobros</button></li>
+      <li><button type="button" class="nav-link" data-tab="staff">Plantilla</button></li>
+      <li><button type="button" class="nav-link" data-tab="reports">Indicadores</button></li>
+      <li><button type="button" class="nav-link" data-tab="media">Medios</button></li>
+    </ul></nav>
+  </div></header>
+
+  <section class="page-hero"><div class="container page-hero__inner">
+    <p class="page-hero__eyebrow" id="page-eyebrow">Supervisión</p>
+    <h1 class="page-hero__title" id="page-title">Panel de dirección</h1>
+    <p class="page-hero__lead" id="page-lead">Visión operativa del hospital: ocupación, cobros y personal clínico.</p>
+  </div></section>
+
+  <div class="layout"><div class="container layout__grid">
+    <aside class="sidebar"><p class="sidebar__label">Dirección</p>
+      <ul class="sidebar__nav" id="sidebar-nav">
+        <li><button type="button" class="sidebar-link active" data-tab="dashboard">Resumen</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="appointments">Citas</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="payments">Cobros</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="staff">Plantilla</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="reports">Indicadores</button></li>
+        <li><button type="button" class="sidebar-link" data-tab="media">Medios</button></li>
+      </ul>
+      <div class="sidebar__note"><strong>Permisos</strong><p>Consulta global y seguimiento. Sin alta/baja de maestros.</p></div>
+    </aside>
+
+    <main class="content">
+      <section id="panel-dashboard" class="panel active" data-title="Panel de dirección" data-eyebrow="Supervisión" data-lead="Visión operativa del hospital: ocupación, cobros y personal clínico.">
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-card__value" id="stat-doctors">—</div><div class="stat-card__label">Doctores activos</div></article>
+          <article class="stat-card"><div class="stat-card__value" id="stat-patients">—</div><div class="stat-card__label">Pacientes</div></article>
+          <article class="stat-card"><div class="stat-card__value" id="stat-today">—</div><div class="stat-card__label">Citas hoy</div></article>
+          <article class="stat-card accent"><div class="stat-card__value" id="stat-pending">—</div><div class="stat-card__label">Cobros pendientes</div></article>
+        </div>
+        <div class="surface"><header class="surface__head"><h2>Actividad reciente</h2></header><div class="surface__body" id="director-recent"></div></div>
+      </section>
+
+      <section id="panel-appointments" class="panel" data-title="Citas institucionales" data-eyebrow="Agenda global" data-lead="Todas las citas del centro para seguimiento directivo.">
+        <div class="surface"><header class="surface__head"><h2>Listado de citas</h2></header><div class="surface__body" id="director-appointments"></div></div>
+      </section>
+
+      <section id="panel-payments" class="panel" data-title="Agenda de cobros" data-eyebrow="Finanzas" data-lead="Estado de pagos ligados a citas.">
+        <div class="surface"><header class="surface__head"><h2>Cobros</h2></header><div class="surface__body" id="director-payments"></div></div>
+      </section>
+
+      <section id="panel-staff" class="panel" data-title="Plantilla clínica" data-eyebrow="Personal" data-lead="Doctores y pacientes registrados (solo lectura).">
+        <div class="surface"><header class="surface__head"><h2>Doctores</h2></header><div class="surface__body" id="director-doctors"></div></div>
+        <div class="surface"><header class="surface__head"><h2>Pacientes</h2></header><div class="surface__body" id="director-patients"></div></div>
+      </section>
+
+      <section id="panel-reports" class="panel" data-title="Indicadores" data-eyebrow="Reportes" data-lead="Resumen ejecutivo de ocupación y cartera.">
+        <div class="surface"><header class="surface__head"><h2>Indicadores del día</h2></header><div class="surface__body" id="director-reports"></div></div>
+      </section>
+
+      <section id="panel-media" class="panel" data-title="Biblioteca de medios" data-eyebrow="Archivos" data-lead="Consulte e incorpore imágenes y videos institucionales.">
+        <div class="surface">
+          <header class="surface__head"><h2>Subir archivo</h2></header>
+          <div class="surface__body">
+            <form id="media-upload-form" class="form-grid media-upload-form">
+              <label>Título<input type="text" id="media-title"></label>
+              <label>Tipo<select id="media-kind"><option value="auto">Auto</option><option value="image">Imagen</option><option value="video">Video</option></select></label>
+              <label>Archivo<input type="file" id="media-file" accept="image/*,video/mp4,video/webm,video/quicktime" required></label>
+              <div class="form-actions"><button type="submit" class="btn btn-primary">Subir</button></div>
+            </form>
+          </div>
+        </div>
+        <div class="surface"><header class="surface__head"><h2>Galería</h2></header>
+          <div class="surface__body">
+            <div class="filters">
+              <label>Filtrar<select id="media-filter-kind"><option value="">Todos</option><option value="image">Imágenes</option><option value="video">Videos</option></select></label>
+              <button type="button" class="btn btn-primary" id="media-refresh">Actualizar</button>
+            </div>
+            <div id="media-gallery" class="media-gallery"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div></div>
+
+  <footer class="site-footer"><div class="container site-footer__base"><span>Proyecto H · Vista de dirección</span></div></footer>
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/media.js"></script>
+  <script src="/static/js/profile-menu.js"></script>
+  <script src="/static/js/director.js"></script>
+</body>
+</html>

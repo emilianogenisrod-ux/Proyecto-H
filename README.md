@@ -1,8 +1,19 @@
 # Proyecto-H — Gestor de Citas Hospitalarias
 
-MVP de gestión de citas médicas con FastAPI, SQLAlchemy 2, Pydantic v2, Jinja2 y SQLite.
+MVP de gestión de citas médicas con **Python / FastAPI**, SQLAlchemy 2, Pydantic v2, Jinja2.
 
 **Repositorio:** https://github.com/emilianogenisrod-ux/Proyecto-H
+
+## Stack
+
+| Capa | Tecnología |
+|------|------------|
+| Backend | Python · FastAPI · Uvicorn |
+| ORM | SQLAlchemy 2 |
+| BD (local) | SQLite (`data/hospital.db`) |
+| BD (producción) | Supabase Postgres · `https://iagenteksupabase.iagentek.com.mx` |
+| Objetos | MinIO · consola `iagentekminiofront.iagentek.com.mx` · S3 `iagentekminioback.iagentek.com.mx` |
+| Tablas | Prefijo `hospital-` (`hospital-doctors`, `hospital-patients`, …) |
 
 ## Metodología
 
@@ -11,14 +22,11 @@ MVP de gestión de citas médicas con FastAPI, SQLAlchemy 2, Pydantic v2, Jinja2
 
 ## Funcionalidades
 
-- **Doctores**: CRUD con nombre, especialidad, duración de consulta, tarifa default y estado activo
-- **Pacientes**: CRUD con documento único, teléfono y email
-- **Horarios semanales**: bloques por doctor (Lunes=0 … Domingo=6)
-- **Slots disponibles**: cálculo automático excluyendo citas activas
-- **Citas**: crear, listar, cancelar (con motivo) y reprogramar, con detección de solapes
-- **Pagos**: relación 1:1 con citas (pending, paid, partial, exempt, refund_pending)
-- **UI web** en español con pestañas: Dashboard, Doctores, Pacientes, Horarios, Citas, Pagos
-- **Seed automático** al iniciar si la base de datos está vacía
+- **Doctores / Pacientes / Horarios / Citas / Pagos** con API REST y paneles por rol
+- **Roles**: admin, director, doctor, paciente
+- **Medios**: imágenes, videos y plantillas (disco local o MinIO)
+- **Documentación** in-app en `/documentacion`
+- **Seed** automático si la BD está vacía
 
 ## Requisitos
 
@@ -37,6 +45,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
+cp .env.example .env   # ajustar DATABASE_URL / MinIO en producción
 ```
 
 ## Ejecución
@@ -45,9 +54,29 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Abrir en el navegador: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+Abrir: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-La API REST está disponible bajo `/api`. Documentación interactiva en [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+| Rol | Correo | Contraseña | Panel |
+|-----|--------|------------|-------|
+| Administrador | `emilio@farma` | `emilio123` | `/app/admin` |
+| Director | `director@farma` | `director123` | `/app/director` |
+| Doctor | `doctor@farma` | `doctor123` | `/app/doctor` |
+| Paciente | `paciente@farma` | `paciente123` | `/app/patient` |
+
+## Base de datos (`hospital-*`)
+
+Esquema SQL: `sql/001_hospital_schema.sql`
+
+- `hospital-doctors`
+- `hospital-patients`
+- `hospital-schedule_blocks`
+- `hospital-appointments`
+- `hospital-payments`
+- `hospital-media_assets`
+
+## MinIO
+
+Con `MINIO_ENABLED=true` y credenciales en `.env`, uploads van al bucket `hospital` (imágenes, plantillas, videos). Sin MinIO, se usa la carpeta local `media/`.
 
 ## Tests
 
@@ -58,23 +87,9 @@ pytest -v
 ## Estructura
 
 ```
-app/
-  main.py           # Punto de entrada FastAPI
-  config.py         # Configuración (DATABASE_URL)
-  database.py       # Engine, sesión, init_db
-  models.py         # Modelos SQLAlchemy
-  schemas.py        # Esquemas Pydantic
-  seed.py           # Datos iniciales
-  routers/          # Endpoints REST
-  services/         # Lógica de disponibilidad
-  templates/        # Plantilla Jinja2
-  static/           # CSS y JS
-tests/
-  test_api.py       # Tests con pytest
-data/
-  hospital.db       # Base SQLite (generada al iniciar)
+app/                 # FastAPI, modelos, routers, templates
+sql/                 # Migraciones Postgres / Supabase
+media/               # Fallback local de archivos
+specs/               # Spec Kit
+_bmad-output/        # BMAD
 ```
-
-## Base de datos
-
-SQLite en `data/hospital.db`. Se crea automáticamente al arrancar la aplicación.

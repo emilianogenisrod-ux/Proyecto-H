@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="error-body">
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <main class="error-shell">
+    <div class="error-card">
+      <p class="error-code">{{ status_code }}</p>
+      <div class="brand auth-brand" style="margin-bottom: 1.25rem;">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__text">
+          <span class="brand__name">Proyecto H</span>
+          <span class="brand__tag">Incidencia</span>
+        </span>
+      </div>
+      <h1 class="error-title">{{ error_title }}</h1>
+      <p class="error-message">{{ message }}</p>
+      {% if detail %}
+      <p class="error-detail"><code>{{ detail }}</code></p>
+      {% endif %}
+      <div class="error-actions">
+        <a class="btn btn-primary" href="{{ home_url }}">Volver al inicio</a>
+        <a class="btn btn-ghost" href="/login">Ir al login</a>
+        <button type="button" class="btn btn-ghost" onclick="history.back()">Página anterior</button>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

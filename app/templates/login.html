@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="auth-body auth-body--video">
+  <video
+    class="auth-video"
+    autoplay
+    muted
+    loop
+    playsinline
+    disablepictureinpicture
+    controlslist="nodownload noplaybackrate noremoteplayback"
+    aria-hidden="true"
+    tabindex="-1"
+  >
+    <source src="/static/video/login-bg.mp4" type="video/mp4">
+  </video>
+  <div class="auth-video-veil" aria-hidden="true"></div>
+
+  <div class="auth-shell auth-shell--overlay">
+    <main class="auth-card auth-card--bare">
+      <div class="auth-brand">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <div>
+          <p class="auth-brand__name">Proyecto H</p>
+          <p class="auth-brand__tag">Gestor de Citas Hospitalarias</p>
+        </div>
+      </div>
+
+      <p class="auth-kicker">Portal institucional</p>
+      <h1 class="auth-form-title">Iniciar sesión</h1>
+      <p class="auth-form-lead">Use su correo @farma y contraseña asignada.</p>
+
+      {% if error %}
+      <div class="auth-alert" role="alert">{{ error }}</div>
+      {% endif %}
+
+      <form class="auth-form" method="post" action="/login" novalidate>
+        <label>
+          Correo
+          <input type="email" name="email" autocomplete="username" required
+                 value="{{ email_value or 'emilio@farma' }}" placeholder="usuario@farma">
+        </label>
+        <label class="auth-password-label">
+          Contraseña
+          <span class="auth-password-field">
+            <input type="password" name="password" id="login-password" autocomplete="current-password" required
+                   placeholder="••••••••">
+            <button type="button" class="auth-password-toggle" id="toggle-password" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña">
+              <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path class="eye-outline" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle class="eye-pupil" cx="12" cy="12" r="3"></circle>
+                <line class="eye-slash" x1="3" y1="3" x2="21" y2="21"></line>
+              </svg>
+            </button>
+          </span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Entrar al sistema</button>
+      </form>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const video = document.querySelector(".auth-video");
+      if (video) {
+        video.muted = true;
+        video.defaultMuted = true;
+        video.volume = 0;
+        video.setAttribute("muted", "");
+        const play = () => video.play().catch(() => {});
+        play();
+        video.addEventListener("volumechange", () => {
+          if (!video.muted || video.volume > 0) {
+            video.muted = true;
+            video.volume = 0;
+          }
+        });
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden) play();
+        });
+      }
+
+      const input = document.getElementById("login-password");
+      const toggle = document.getElementById("toggle-password");
+      if (input && toggle) {
+        toggle.addEventListener("click", () => {
+          const showing = input.type === "text";
+          input.type = showing ? "password" : "text";
+          toggle.classList.toggle("is-open", !showing);
+          toggle.setAttribute("aria-pressed", showing ? "false" : "true");
+          toggle.setAttribute("aria-label", showing ? "Mostrar contraseña" : "Ocultar contraseña");
+          toggle.title = showing ? "Mostrar contraseña" : "Ocultar contraseña";
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

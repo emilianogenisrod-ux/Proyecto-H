@@ -4,8 +4,16 @@ __pycache__/
 .venv/
 venv/
 data/
-*.db
+media/images/*
+media/videos/*
+media/avatars/*
+media/templates/*
+!media/images/.gitkeep
+!media/videos/.gitkeep
+!media/avatars/.gitkeep
+!media/templates/.gitkeep
 .env
+*.db
 .DS_Store
 *.egg-info/
 dist/

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <meta http-equiv="refresh" content="{{ (delay_ms / 1000)|int }};url={{ next_url }}">
+</head>
+<body class="loading-body">
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <main class="loading-shell" role="status" aria-live="polite">
+    <div class="loading-card">
+      <div class="brand auth-brand loading-brand">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__text">
+          <span class="brand__name">Proyecto H</span>
+          <span class="brand__tag">Cargando</span>
+        </span>
+      </div>
+
+      <div class="loader" aria-hidden="true">
+        <span class="loader__ring"></span>
+        <span class="loader__ring loader__ring--delay"></span>
+      </div>
+
+      <h1 class="loading-title">{{ message }}</h1>
+      <p class="loading-lead">Validando sesión y sincronizando módulos clínicos…</p>
+
+      <div class="loading-steps">
+        <div class="loading-step is-active">Sesión</div>
+        <div class="loading-step">Agenda</div>
+        <div class="loading-step">Panel</div>
+      </div>
+
+      <div class="loading-bar" aria-hidden="true"><span></span></div>
+      <a class="loading-skip" href="{{ next_url }}">Continuar ahora</a>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const next = {{ next_url|tojson }};
+      const delay = {{ delay_ms|int }};
+      const steps = document.querySelectorAll(".loading-step");
+      let i = 0;
+      const tick = setInterval(() => {
+        steps.forEach((s, idx) => s.classList.toggle("is-active", idx <= i));
+        i += 1;
+        if (i >= steps.length) clearInterval(tick);
+      }, Math.max(280, delay / 3));
+      setTimeout(() => { window.location.href = next; }, delay);
+    })();
+  </script>
+</body>
+</html>
