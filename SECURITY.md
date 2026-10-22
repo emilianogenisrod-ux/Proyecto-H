@@ -1,10 +1,11 @@
 # Qué ve el profesor y qué queda privado
 
-El repositorio es **público** para que se pueda revisar el código:
+Hay dos enlaces distintos:
 
-https://github.com/emilianogenisrod-ux/Proyecto-H
+- **La página del sistema:** https://proyecto-h.iagentek.com.mx
+- **El código, para revisarlo en clase:** https://github.com/emilianogenisrod-ux/Proyecto-H
 
-Supabase (la base de datos) y MinIO (los archivos) **no se publican ahí**.
+El repositorio es público. Supabase (la base de datos) y MinIO (los archivos) **no se publican ahí**.
 
 ## Lo que sí se puede ver en GitHub
 

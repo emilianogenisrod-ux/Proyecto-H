@@ -2,9 +2,12 @@
 
 MVP de gestión de citas médicas con **Python / FastAPI**, SQLAlchemy 2, Pydantic v2, Jinja2.
 
-**Repositorio público:** https://github.com/emilianogenisrod-ux/Proyecto-H
+**Página del proyecto:** https://proyecto-h.iagentek.com.mx
 
-Este repositorio es el código del proyecto, para que se pueda revisar en clase.
+**Código (GitHub):** https://github.com/emilianogenisrod-ux/Proyecto-H
+
+Este repositorio es el código, para que se pueda revisar en clase.
+La página de arriba es el sistema ya publicado.
 Las claves de la base de datos, MinIO y el inicio de sesión **no van aquí**.
 Viven en el servidor, en secretos de Docker. Detalle: [SECURITY.md](SECURITY.md).
 

@@ -36,22 +36,10 @@
         </button>
       </li>
       <li role="none">
-        <a class="profile-dropdown__item" role="menuitem" href="/documentacion">
-          Documentación
-        </a>
-      </li>
-      <li role="none">
         <a class="profile-dropdown__item" role="menuitem" href="{{ user.home if user and user.home else '/app' }}">
           Ir a mi panel
         </a>
       </li>
-      {% if user and user.role == 'admin' %}
-      <li role="none">
-        <a class="profile-dropdown__item" role="menuitem" href="/docs" target="_blank" rel="noopener">
-          API Docs (Swagger)
-        </a>
-      </li>
-      {% endif %}
       <li role="none" class="profile-dropdown__divider"></li>
       <li role="none">
         <a class="profile-dropdown__item profile-dropdown__item--danger" role="menuitem" href="/logout">

@@ -7,7 +7,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.docs_content import API_ENDPOINTS, TABLES_DOC, get_create_table_sql
 from app.auth import (
     authenticate,
     ensure_role_entities,
@@ -39,7 +38,13 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan)
+app = FastAPI(
+    title=settings.APP_TITLE,
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET, same_site="lax")
 
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -157,25 +162,6 @@ async def app_home(request: Request):
     if not user:
         return RedirectResponse(url="/login", status_code=303)
     return RedirectResponse(url=home_for_user(user), status_code=303)
-
-
-@app.get("/documentacion", response_class=HTMLResponse)
-async def documentation_page(request: Request):
-    user = get_session_user(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse(
-        request,
-        "documentation.html",
-        {
-            "title": "Documentación del sistema · Proyecto H",
-            "user": user,
-            "home_url": home_for_user(user),
-            "tables": TABLES_DOC,
-            "ddl": get_create_table_sql(),
-            "endpoints": API_ENDPOINTS,
-        },
-    )
 
 
 @app.get("/app/admin", response_class=HTMLResponse)
