@@ -1,4 +1,5 @@
 import io
+import os
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -10,7 +11,7 @@ png = bytes.fromhex(
 client = TestClient(app)
 r = client.post(
     "/login",
-    data={"email": "emiliano@farma", "password": "emiliano123"},
+    data={"email": os.environ.get("TEST_LOGIN_EMAIL", ""), "password": os.environ.get("TEST_LOGIN_PASSWORD", "")},
     follow_redirects=False,
 )
 print("login", r.status_code)

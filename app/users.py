@@ -1,6 +1,13 @@
-"""Catálogo de usuarios y permisos por rol."""
+"""Catálogo de usuarios y permisos por rol.
+
+Las contraseñas no viven en este archivo. En desarrollo local se leen de
+USER_PASSWORDS_JSON en el archivo .env (que no se sube a GitHub).
+En el servidor se usan secretos de Docker, fuera del repositorio.
+"""
 
 from __future__ import annotations
+
+import json
 
 ROLE_ADMIN = "admin"
 ROLE_DIRECTOR = "director"
@@ -14,7 +21,6 @@ ROLE_LABELS = {
     ROLE_PATIENT: "Paciente",
 }
 
-# Rutas de inicio por rol
 ROLE_HOME = {
     ROLE_ADMIN: "/app/admin",
     ROLE_DIRECTOR: "/app/director",
@@ -22,7 +28,6 @@ ROLE_HOME = {
     ROLE_PATIENT: "/app/patient",
 }
 
-# Módulos visibles por rol (para nav / UI)
 ROLE_MODULES = {
     ROLE_ADMIN: ["dashboard", "doctors", "patients", "schedules", "appointments", "payments", "users"],
     ROLE_DIRECTOR: ["dashboard", "doctors", "patients", "schedules", "appointments", "payments", "reports"],
@@ -33,28 +38,24 @@ ROLE_MODULES = {
 USERS: dict[str, dict] = {
     "emiliano@farma": {
         "email": "emiliano@farma",
-        "password": "emiliano123",
         "name": "Emiliano Farma",
         "role": ROLE_ADMIN,
         "role_label": ROLE_LABELS[ROLE_ADMIN],
     },
     "sara@farma": {
         "email": "sara@farma",
-        "password": "sara123",
         "name": "Sara Farma",
         "role": ROLE_ADMIN,
         "role_label": ROLE_LABELS[ROLE_ADMIN],
     },
     "director@farma": {
         "email": "director@farma",
-        "password": "director123",
         "name": "Laura Mendoza",
         "role": ROLE_DIRECTOR,
         "role_label": ROLE_LABELS[ROLE_DIRECTOR],
     },
     "doctor@farma": {
         "email": "doctor@farma",
-        "password": "doctor123",
         "name": "Dr. Andrés Vega",
         "role": ROLE_DOCTOR,
         "role_label": ROLE_LABELS[ROLE_DOCTOR],
@@ -62,7 +63,6 @@ USERS: dict[str, dict] = {
     },
     "paciente@farma": {
         "email": "paciente@farma",
-        "password": "paciente123",
         "name": "Sofía Ramírez",
         "role": ROLE_PATIENT,
         "role_label": ROLE_LABELS[ROLE_PATIENT],
@@ -72,11 +72,26 @@ USERS: dict[str, dict] = {
 }
 
 
+def password_for(email: str) -> str | None:
+    from app.config import settings
+
+    raw = (settings.USER_PASSWORDS_JSON or "").strip()
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    value = data.get((email or "").strip().lower())
+    return value if isinstance(value, str) and value else None
+
+
 def list_demo_accounts() -> list[dict]:
     return [
         {
             "email": u["email"],
-            "password": u["password"],
             "name": u["name"],
             "role": u["role"],
             "role_label": u["role_label"],

@@ -2,7 +2,11 @@
 
 MVP de gestión de citas médicas con **Python / FastAPI**, SQLAlchemy 2, Pydantic v2, Jinja2.
 
-**Repositorio:** https://github.com/emilianogenisrod-ux/Proyecto-H
+**Repositorio público:** https://github.com/emilianogenisrod-ux/Proyecto-H
+
+Este repositorio es el código del proyecto, para que se pueda revisar en clase.
+Las claves de la base de datos, MinIO y el inicio de sesión **no van aquí**.
+Viven en el servidor, en secretos de Docker. Detalle: [SECURITY.md](SECURITY.md).
 
 ## Stack
 
@@ -11,8 +15,8 @@ MVP de gestión de citas médicas con **Python / FastAPI**, SQLAlchemy 2, Pydant
 | Backend | Python · FastAPI · Uvicorn |
 | ORM | SQLAlchemy 2 |
 | BD (local) | SQLite (`data/hospital.db`) |
-| BD (producción) | Supabase Postgres · `https://iagenteksupabase.iagentek.com.mx` |
-| Objetos | MinIO · consola `iagentekminiofront.iagentek.com.mx` · S3 `iagentekminioback.iagentek.com.mx` |
+| BD (producción) | PostgreSQL en red interna del servidor (Supabase). Sin acceso público desde GitHub. |
+| Objetos | MinIO en red interna del servidor. Sin claves ni consola en este repositorio. |
 | Tablas | Prefijo `hospital-` (`hospital-doctors`, `hospital-patients`, …) |
 
 ## Metodología
@@ -25,7 +29,6 @@ MVP de gestión de citas médicas con **Python / FastAPI**, SQLAlchemy 2, Pydant
 - **Doctores / Pacientes / Horarios / Citas / Pagos** con API REST y paneles por rol
 - **Roles**: admin, director, doctor, paciente
 - **Medios**: imágenes, videos y plantillas (disco local o MinIO)
-- **Documentación** in-app en `/documentacion`
 - **Seed** automático si la BD está vacía
 
 ## Requisitos
@@ -45,8 +48,11 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
-cp .env.example .env   # ajustar DATABASE_URL / MinIO en producción
+cp .env.example .env
 ```
+
+En `.env` puede poner contraseñas **solo para practicar en su computadora**.
+Ese archivo no se sube a GitHub.
 
 ## Ejecución
 
@@ -56,13 +62,18 @@ uvicorn app.main:app --reload
 
 Abrir: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-| Rol | Correo | Contraseña | Panel |
-|-----|--------|------------|-------|
-| Administrador | `emiliano@farma` | `emiliano123` | `/app/admin` |
-| Administrador | `sara@farma` | `sara123` | `/app/admin` |
-| Director | `director@farma` | `director123` | `/app/director` |
-| Doctor | `doctor@farma` | `doctor123` | `/app/doctor` |
-| Paciente | `paciente@farma` | `paciente123` | `/app/patient` |
+Las cuentas del servidor no se publican. Se configuran fuera de este repositorio.
+
+## Qué queda privado
+
+- Contraseñas de entrada
+- Contraseña de PostgreSQL / Supabase
+- Usuario y clave de MinIO
+- Direcciones internas de la base y del almacén de archivos
+- El archivo `.env` del servidor
+
+La aplicación, en producción, habla con la base y con MinIO **por la red interna del servidor**.
+No hace falta publicar esas puertas en GitHub.
 
 ## Base de datos (`hospital-*`)
 
@@ -77,7 +88,8 @@ Esquema SQL: `sql/001_hospital_schema.sql`
 
 ## MinIO
 
-Con `MINIO_ENABLED=true` y credenciales en `.env`, uploads van al bucket `hospital` (imágenes, plantillas, videos). Sin MinIO, se usa la carpeta local `media/`.
+Si `MINIO_ENABLED=true` y las claves están en el servidor, los archivos van al bucket `hospital`.
+Sin MinIO, se usa la carpeta local `media/`.
 
 ## Tests
 

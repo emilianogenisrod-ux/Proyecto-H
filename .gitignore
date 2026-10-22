@@ -13,6 +13,11 @@ media/templates/*
 !media/avatars/.gitkeep
 !media/templates/.gitkeep
 .env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
 *.db
 .DS_Store
 *.egg-info/

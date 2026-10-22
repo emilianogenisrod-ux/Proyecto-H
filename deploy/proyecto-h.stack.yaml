@@ -1,3 +1,5 @@
+# Plantilla del servicio web. Las claves reales viven en secretos de Docker
+# en el servidor, no en este archivo.
 version: "3.8"
 
 services:
@@ -7,17 +9,21 @@ services:
       - iagenteknet
       - supabase_internal
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - SESSION_SECRET=${SESSION_SECRET}
       - APP_TITLE=Gestor de Citas Hospitalarias
       - MINIO_ENABLED=true
       - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - MINIO_BUCKET=hospital
       - MINIO_SECURE=false
-      - MINIO_PUBLIC_BASE_URL=https://iagentekminioback.iagentek.com.mx
-      - SUPABASE_URL=https://iagenteksupabase.iagentek.com.mx
+      - MINIO_PUBLIC_BASE_URL=
+      - DATABASE_URL_FILE=/run/secrets/database_url
+      - SESSION_SECRET_FILE=/run/secrets/session_secret
+      - MINIO_ACCESS_KEY_FILE=/run/secrets/minio_access_key
+      - MINIO_SECRET_KEY_FILE=/run/secrets/minio_secret_key
+    secrets:
+      - database_url
+      - session_secret
+      - minio_access_key
+      - minio_secret_key
     volumes:
       - proyecto_h_media:/app/media
       - proyecto_h_data:/app/data
@@ -49,3 +55,13 @@ networks:
 volumes:
   proyecto_h_media:
   proyecto_h_data:
+
+secrets:
+  database_url:
+    external: true
+  session_secret:
+    external: true
+  minio_access_key:
+    external: true
+  minio_secret_key:
+    external: true
