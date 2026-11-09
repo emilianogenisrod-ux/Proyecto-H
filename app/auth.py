@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from datetime import time
 
 from app.models import Doctor, Patient, ScheduleBlock
-from app.users import ROLE_DOCTOR, ROLE_HOME, ROLE_PATIENT, USERS, public_user
+from app.security import verify_password
+from app.users import ROLE_DOCTOR, ROLE_HOME, ROLE_PATIENT, USERS, password_for, public_user
 
 SESSION_USER_KEY = "user"
 
@@ -53,7 +54,8 @@ def _resolve_extras(db: Session, record: dict) -> dict:
 def authenticate(email: str, password: str, db: Session | None = None) -> dict | None:
     email_n = (email or "").strip().lower()
     record = USERS.get(email_n)
-    if not record or record["password"] != password:
+    expected = password_for(email_n)
+    if not record or not expected or not verify_password(password, expected):
         return None
     extras = _resolve_extras(db, record) if db is not None else {}
     return public_user(record, extras)

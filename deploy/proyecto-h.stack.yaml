@@ -1,3 +1,5 @@
+# Plantilla del servicio web. Las claves reales viven en secretos de Docker
+# en el servidor, no en este archivo.
 version: "3.8"
 
 services:
@@ -5,19 +7,29 @@ services:
     image: proyecto-h-api:latest
     networks:
       - iagenteknet
-      - supabase_internal
+      - supabase_maestria_internal
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - SESSION_SECRET=${SESSION_SECRET}
       - APP_TITLE=Gestor de Citas Hospitalarias
+      - ENVIRONMENT=production
+      - ENABLE_API_DOCS=false
+      - SESSION_COOKIE_SECURE=true
+      - ALLOWED_HOSTS=proyecto-h.iagentek.com.mx,localhost,127.0.0.1
       - MINIO_ENABLED=true
       - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - MINIO_BUCKET=hospital
       - MINIO_SECURE=false
-      - MINIO_PUBLIC_BASE_URL=https://iagentekminioback.iagentek.com.mx
-      - SUPABASE_URL=https://iagenteksupabase.iagentek.com.mx
+      - MINIO_PUBLIC_BASE_URL=
+      - DATABASE_URL_FILE=/run/secrets/database_url
+      - SESSION_SECRET_FILE=/run/secrets/session_secret
+      - MINIO_ACCESS_KEY_FILE=/run/secrets/minio_access_key
+      - MINIO_SECRET_KEY_FILE=/run/secrets/minio_secret_key
+      - USER_PASSWORD_HASHES_FILE=/run/secrets/user_password_hashes
+    secrets:
+      - database_url
+      - session_secret
+      - minio_access_key
+      - minio_secret_key
+      - user_password_hashes
     volumes:
       - proyecto_h_media:/app/media
       - proyecto_h_data:/app/data
@@ -43,9 +55,21 @@ services:
 networks:
   iagenteknet:
     external: true
-  supabase_internal:
+  supabase_maestria_internal:
     external: true
 
 volumes:
   proyecto_h_media:
   proyecto_h_data:
+
+secrets:
+  database_url:
+    external: true
+  session_secret:
+    external: true
+  minio_access_key:
+    external: true
+  minio_secret_key:
+    external: true
+  user_password_hashes:
+    external: true
