@@ -2,7 +2,10 @@
 
 Aplicación web para citas médicas con Python / FastAPI, SQLAlchemy 2, Pydantic v2 y Jinja2.
 
-**Sitio:** https://proyecto-h.iagentek.com.mx  
+## Enlace de la página
+
+**Abrir el sistema:** https://proyecto-h.iagentek.com.mx/login
+
 **Código:** https://github.com/emilianogenisrod-ux/Proyecto-H
 
 Las claves de base de datos, MinIO y acceso no se suben a este repositorio. Se configuran en el servidor.
