@@ -442,18 +442,18 @@
       </header>
       <div class="profile-dialog__body">
         <p class="profile-dialog__hint" id="reschedule-summary">—</p>
-        <label id="reschedule-doctor-wrap" hidden>Doctor
-          <select id="reschedule-doctor"></select>
+        <label id="reschedule-doctor-wrap">Doctor
+          <select id="reschedule-doctor" required></select>
         </label>
         <label>Nueva fecha
-          <input type="date" id="reschedule-date" required>
+          <input type="date" id="reschedule-date" required min="">
         </label>
         <label>Horario disponible
           <select id="reschedule-slot" required>
-            <option value="">Seleccione una fecha</option>
+            <option value="">Seleccione doctor y fecha</option>
           </select>
         </label>
-        <p class="profile-dialog__hint">Solo aparecen horarios futuros (hora de México).</p>
+        <p class="profile-dialog__hint" id="reschedule-slots-hint">Los horarios son del doctor elegido. Hoy solo horas futuras (Ciudad de México); no se puede reagendar en el pasado.</p>
       </div>
       <footer class="profile-dialog__actions">
         <button type="submit" class="btn btn-ghost" value="cancel">Cancelar</button>

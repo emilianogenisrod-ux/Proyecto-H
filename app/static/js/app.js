@@ -1201,18 +1201,24 @@ if (cancelApptForm) {
 }
 
 function _rescheduleDoctorId() {
-  const wrap = document.getElementById("reschedule-doctor-wrap");
   const sel = document.getElementById("reschedule-doctor");
-  if (wrap && !wrap.hidden && sel && sel.value) return Number(sel.value);
+  if (sel && sel.value) return Number(sel.value);
   return _pendingReschedule ? _pendingReschedule.doctor_id : null;
 }
 
 async function loadRescheduleSlots() {
   const day = document.getElementById("reschedule-date").value;
   const slotSelect = document.getElementById("reschedule-slot");
+  const hint = document.getElementById("reschedule-slots-hint");
   const doctorId = _rescheduleDoctorId();
   if (!_pendingReschedule || !day || !doctorId) {
-    slotSelect.innerHTML = '<option value="">Seleccione una fecha</option>';
+    slotSelect.innerHTML = '<option value="">Seleccione doctor y fecha</option>';
+    return;
+  }
+  const hoy = todayISO();
+  if (day < hoy) {
+    slotSelect.innerHTML = '<option value="">No se puede reagendar en el pasado</option>';
+    if (hint) hint.textContent = "La fecha está en el pasado (calendario México).";
     return;
   }
   try {
@@ -1220,6 +1226,14 @@ async function loadRescheduleSlots() {
       `/doctors/${doctorId}/slots?day=${day}&excluir_cita_id=${_pendingReschedule.id}`,
       { silent: true }
     );
+    const doc = (_doctorsCache || []).find((d) => d.id === doctorId);
+    const nombre = doc ? doc.nombre_completo : `doctor #${doctorId}`;
+    if (hint) {
+      hint.textContent =
+        day === hoy
+          ? `Hoy · ${nombre}: solo horas futuras (Ciudad de México). ${slots.length} horario(s).`
+          : `${nombre}: ${slots.length} horario(s) libre(s) ese día.`;
+    }
     slotSelect.innerHTML = slots.length
       ? slots
           .map(
@@ -1243,32 +1257,38 @@ window.rescheduleAppt = async (id) => {
     const wrap = document.getElementById("reschedule-doctor-wrap");
     const doctorSel = document.getElementById("reschedule-doctor");
     const especialidad = appt.especialidad_doctor;
+    if (wrap) wrap.hidden = false;
 
+    const doctors = _doctorsCache.length
+      ? _doctorsCache
+      : await api("/doctors", { silent: true });
+    let list = doctors.filter(
+      (d) => d.activo && (!especialidad || d.especialidad === especialidad)
+    );
+    if (especialidad === "Ginecología") list = list.filter((d) => d.sexo === "F");
     if (appt.estado === "doctor_absent") {
+      list = list.filter((d) => d.id !== appt.doctor_id);
       document.getElementById("reschedule-summary").textContent =
-        `${appt.nombre_paciente || "Paciente"} · doctor ausente (${appt.nombre_doctor}). Elige otro doctor de ${especialidad || "la misma especialidad"}.`;
-      wrap.hidden = false;
-      const doctors = await api("/doctors", { silent: true });
-      let list = doctors.filter(
-        (d) => d.activo && d.id !== appt.doctor_id && (!especialidad || d.especialidad === especialidad)
-      );
-      if (especialidad === "Ginecología") list = list.filter((d) => d.sexo === "F");
-      doctorSel.innerHTML = list.length
-        ? list.map((d) => `<option value="${d.id}">${d.nombre_completo}</option>`).join("")
-        : '<option value="">Sin otro doctor disponible</option>';
-      doctorSel.required = true;
-    } else if (appt.estado === "no_show") {
-      document.getElementById("reschedule-summary").textContent =
-        `${appt.nombre_paciente || "Paciente"} llegó tarde · reagendar con ${appt.nombre_doctor || "doctor"}`;
-      wrap.hidden = true;
-      doctorSel.innerHTML = `<option value="${appt.doctor_id}">${appt.nombre_doctor || appt.doctor_id}</option>`;
-      doctorSel.required = false;
+        `${appt.nombre_paciente || "Paciente"} · doctor ausente. Elige otro de ${especialidad || "la misma especialidad"} y un horario libre.`;
     } else {
       document.getElementById("reschedule-summary").textContent =
-        `${appt.nombre_paciente || "Paciente"} con ${appt.nombre_doctor || "doctor"} · actual: ${fmtDateTime(appt.inicio)}`;
-      wrap.hidden = true;
-      doctorSel.innerHTML = `<option value="${appt.doctor_id}">${appt.nombre_doctor || appt.doctor_id}</option>`;
-      doctorSel.required = false;
+        `${appt.nombre_paciente || "Paciente"} · actual: ${fmtDateTime(appt.inicio)}. Elige doctor (misma especialidad), fecha y horario.`;
+    }
+    list.sort((a, b) =>
+      _normText(a.nombre_completo).localeCompare(_normText(b.nombre_completo), "es")
+    );
+    doctorSel.innerHTML = list.length
+      ? list
+          .map(
+            (d) =>
+              `<option value="${d.id}" ${d.id === appt.doctor_id ? "selected" : ""}>${d.nombre_completo} — ${d.especialidad}</option>`
+          )
+          .join("")
+      : '<option value="">Sin doctores disponibles</option>';
+    if (appt.estado === "doctor_absent" && list.length) {
+      doctorSel.value = String(list[0].id);
+    } else if (list.some((d) => d.id === appt.doctor_id)) {
+      doctorSel.value = String(appt.doctor_id);
     }
 
     const dayInput = document.getElementById("reschedule-date");
@@ -1301,15 +1321,17 @@ if (rescheduleForm) {
       toast("Elige un horario disponible", "error");
       return;
     }
-    const body = { inicio };
-    if (_pendingReschedule.estado === "doctor_absent") {
-      const doctorId = _rescheduleDoctorId();
-      if (!doctorId) {
-        toast("Elige otro doctor", "error");
-        return;
-      }
-      body.doctor_id = doctorId;
+    const day = document.getElementById("reschedule-date").value;
+    if (day < todayISO()) {
+      toast("No se puede reagendar en una fecha pasada", "error");
+      return;
     }
+    const doctorId = _rescheduleDoctorId();
+    if (!doctorId) {
+      toast("Elige un doctor", "error");
+      return;
+    }
+    const body = { inicio, doctor_id: doctorId };
     try {
       await api(`/appointments/${_pendingReschedule.id}/reschedule`, {
         method: "POST",

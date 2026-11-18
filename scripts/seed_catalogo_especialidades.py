@@ -62,14 +62,13 @@ NOTAS = {
 }
 
 
-def _franjas_exclusivas(n: int, minutos: int = 45) -> list[tuple[time, time]]:
-    base = datetime.combine(date.today(), time(8, 0))
-    out: list[tuple[time, time]] = []
-    for i in range(n):
-        ini = base + timedelta(minutes=minutos * i)
-        fin = ini + timedelta(minutes=minutos)
-        out.append((ini.time(), fin.time()))
-    return out
+# Turnos de 3 h → varios slots de 30 min por doctor/día (p. ej. 6 opciones)
+TURNOS_LARGOS = [
+    (time(8, 0), time(11, 0)),
+    (time(11, 0), time(14, 0)),
+    (time(14, 0), time(17, 0)),
+    (time(17, 0), time(20, 0)),
+]
 
 
 def _proximo_dia_laboral(desde: date, weekday: int) -> date:
@@ -213,18 +212,22 @@ def main() -> None:
         )
         db.flush()
 
-        franjas = _franjas_exclusivas(len(doctores), minutos=45)
+        # Por especialidad: cada doctor un turno largo distinto (sin traslape interno)
+        por_esp: dict[str, list[Doctor]] = {}
+        for doctor in doctores:
+            por_esp.setdefault(doctor.especialidad, []).append(doctor)
         for dia in range(5):
-            for i, doctor in enumerate(doctores):
-                franja = franjas[(i + dia) % len(franjas)]
-                db.add(
-                    BloqueHorario(
-                        doctor_id=doctor.id,
-                        dia_semana=dia,
-                        hora_inicio=franja[0],
-                        hora_fin=franja[1],
+            for grupo in por_esp.values():
+                for i, doctor in enumerate(grupo):
+                    franja = TURNOS_LARGOS[(i + dia) % len(TURNOS_LARGOS)]
+                    db.add(
+                        BloqueHorario(
+                            doctor_id=doctor.id,
+                            dia_semana=dia,
+                            hora_inicio=franja[0],
+                            hora_fin=franja[1],
+                        )
                     )
-                )
         db.flush()
 
         creadas = _sembrar_citas(db, doctores, pacientes_esp)

@@ -205,6 +205,10 @@ async function loadPatRescheduleSlots() {
     slotSel.innerHTML = '<option value="">Seleccione doctor y fecha</option>';
     return;
   }
+  if (day < todayISO()) {
+    slotSel.innerHTML = '<option value="">No se puede reagendar en el pasado</option>';
+    return;
+  }
   try {
     const slots = await api(
       `/doctors/${doctorId}/slots?day=${day}&excluir_cita_id=${_pendingPatReschedule.id}`,
@@ -231,25 +235,30 @@ window.patOpenReschedule = async (id) => {
     const wrap = document.getElementById("pat-reschedule-doctor-wrap");
     const dateInput = document.getElementById("pat-reschedule-date");
 
+    wrap.style.display = "";
+    let list = _patDoctors.filter(
+      (d) => d.activo && (!especialidad || d.especialidad === especialidad)
+    );
+    if (especialidad === "Ginecología") list = list.filter((d) => d.sexo === "F");
     if (appt.estado === "doctor_absent") {
+      list = list.filter((d) => d.id !== appt.doctor_id);
       document.getElementById("pat-reschedule-summary").textContent =
-        `Doctor ausente: ${appt.nombre_doctor}. Elige otro de ${especialidad || "la misma especialidad"}.`;
-      wrap.style.display = "";
-      let list = _patDoctors.filter(
-        (d) => d.activo && d.id !== appt.doctor_id && (!especialidad || d.especialidad === especialidad)
-      );
-      if (especialidad === "Ginecología") list = list.filter((d) => d.sexo === "F");
-      doctorSel.innerHTML = list.length
-        ? list.map((d) => `<option value="${d.id}">${d.nombre_completo}</option>`).join("")
-        : '<option value="">No hay otro doctor disponible</option>';
-      doctorSel.required = true;
+        `Doctor ausente: ${appt.nombre_doctor}. Elige otro de ${especialidad || "la misma especialidad"} y un horario libre.`;
     } else {
       document.getElementById("pat-reschedule-summary").textContent =
-        `Llegaste tarde a la cita con ${appt.nombre_doctor}. Elige un nuevo horario.`;
-      wrap.style.display = "none";
-      doctorSel.innerHTML = `<option value="${appt.doctor_id}">${appt.nombre_doctor}</option>`;
-      doctorSel.required = false;
+        `Reagenda con un doctor de ${especialidad || "la especialidad"}. Hoy solo horas futuras (México).`;
     }
+    doctorSel.innerHTML = list.length
+      ? list
+          .map(
+            (d) =>
+              `<option value="${d.id}" ${d.id === appt.doctor_id ? "selected" : ""}>${d.nombre_completo}</option>`
+          )
+          .join("")
+      : '<option value="">No hay doctor disponible</option>';
+    doctorSel.required = true;
+    if (appt.estado === "doctor_absent" && list.length) doctorSel.value = String(list[0].id);
+    else if (list.some((d) => d.id === appt.doctor_id)) doctorSel.value = String(appt.doctor_id);
 
     bindAgendaDateInput(dateInput);
     dateInput.value = todayISO();
@@ -274,10 +283,10 @@ document.getElementById("pat-reschedule-form")?.addEventListener("submit", async
   const inicio = document.getElementById("pat-reschedule-slot").value;
   const doctorId = Number(document.getElementById("pat-reschedule-doctor").value);
   if (!inicio || !doctorId) return toast("Elige doctor y horario", "error");
-  const body = { inicio };
-  if (_pendingPatReschedule.estado === "doctor_absent") {
-    body.doctor_id = doctorId;
+  if (document.getElementById("pat-reschedule-date").value < todayISO()) {
+    return toast("No se puede reagendar en el pasado", "error");
   }
+  const body = { inicio, doctor_id: doctorId };
   try {
     await api(`/appointments/${_pendingPatReschedule.id}/reschedule`, {
       method: "POST",

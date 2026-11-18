@@ -245,13 +245,9 @@ def reprogramar_cita(cita_id: int, payload: CitaReprogramar, db: Session = Depen
     if aviso_genero:
         raise HTTPException(status_code=400, detail=aviso_genero)
 
-    # Al cambiar de doctor por ausencia, conserva la especialidad original si es posible
-    if (
-        payload.doctor_id
-        and cita.doctor
-        and doctor.especialidad != cita.doctor.especialidad
-        and cita.estado == EstadoCita.doctor_ausente
-    ):
+    # Mantener la especialidad al cambiar de doctor
+    especialidad_origen = cita.doctor.especialidad if cita.doctor else None
+    if especialidad_origen and doctor.especialidad != especialidad_origen:
         raise HTTPException(
             status_code=400,
             detail="El nuevo doctor debe ser de la misma especialidad",
