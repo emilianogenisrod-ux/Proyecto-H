@@ -1,32 +1,44 @@
 from datetime import datetime, time
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models import AppointmentStatus, PaymentStatus
+from app.especialidades import ESPECIALIDADES
+from app.models import EstadoCita, EstadoPago
+
+EspecialidadNombre = Literal[
+    "Medicina General",
+    "Pediatría",
+    "Ginecología",
+    "Dermatología",
+]
 
 
 class DoctorBase(BaseModel):
-    full_name: str = Field(..., min_length=1, max_length=200)
-    specialty: str = Field(..., min_length=1, max_length=120)
-    consultation_minutes: int = Field(default=30, ge=5, le=240)
-    default_fee: float = Field(default=500.0, ge=0)
-    phone: str | None = Field(default=None, max_length=30)
-    email: str | None = Field(default=None, max_length=120)
-    is_active: bool = True
+    nombre_completo: str = Field(..., min_length=1, max_length=200)
+    especialidad: str = Field(..., min_length=1, max_length=120)
+    minutos_consulta: int = Field(default=30, ge=5, le=240)
+    tarifa: float = Field(default=500.0, ge=0)
+    telefono: str | None = Field(default=None, max_length=30)
+    correo: str | None = Field(default=None, max_length=120)
+    activo: bool = True
 
 
 class DoctorCreate(DoctorBase):
-    pass
+    especialidad: EspecialidadNombre = Field(
+        ...,
+        description=f"Solo: {', '.join(ESPECIALIDADES)}",
+    )
 
 
 class DoctorUpdate(BaseModel):
-    full_name: str | None = Field(default=None, min_length=1, max_length=200)
-    specialty: str | None = Field(default=None, min_length=1, max_length=120)
-    consultation_minutes: int | None = Field(default=None, ge=5, le=240)
-    default_fee: float | None = Field(default=None, ge=0)
-    phone: str | None = Field(default=None, max_length=30)
-    email: str | None = Field(default=None, max_length=120)
-    is_active: bool | None = None
+    nombre_completo: str | None = Field(default=None, min_length=1, max_length=200)
+    especialidad: EspecialidadNombre | None = None
+    minutos_consulta: int | None = Field(default=None, ge=5, le=240)
+    tarifa: float | None = Field(default=None, ge=0)
+    telefono: str | None = Field(default=None, max_length=30)
+    correo: str | None = Field(default=None, max_length=120)
+    activo: bool | None = None
 
 
 class DoctorRead(DoctorBase):
@@ -36,105 +48,132 @@ class DoctorRead(DoctorBase):
     created_at: datetime
 
 
-class PatientBase(BaseModel):
-    full_name: str = Field(..., min_length=1, max_length=200)
-    document_id: str = Field(..., min_length=1, max_length=50)
-    phone: str | None = Field(default=None, max_length=30)
-    email: str | None = Field(default=None, max_length=120)
+class PacienteBase(BaseModel):
+    nombre_completo: str = Field(..., min_length=1, max_length=200)
+    documento: str = Field(..., min_length=1, max_length=50)
+    telefono: str | None = Field(default=None, max_length=30)
+    correo: str | None = Field(default=None, max_length=120)
 
 
-class PatientCreate(PatientBase):
+class PacienteCreate(PacienteBase):
     pass
 
 
-class PatientUpdate(BaseModel):
-    full_name: str | None = Field(default=None, min_length=1, max_length=200)
-    document_id: str | None = Field(default=None, min_length=1, max_length=50)
-    phone: str | None = Field(default=None, max_length=30)
-    email: str | None = Field(default=None, max_length=120)
+class PacienteUpdate(BaseModel):
+    nombre_completo: str | None = Field(default=None, min_length=1, max_length=200)
+    documento: str | None = Field(default=None, min_length=1, max_length=50)
+    telefono: str | None = Field(default=None, max_length=30)
+    correo: str | None = Field(default=None, max_length=120)
 
 
-class PatientRead(PatientBase):
+class PacienteRead(PacienteBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     created_at: datetime
 
 
-class ScheduleBlockBase(BaseModel):
-    weekday: int = Field(..., ge=0, le=6)
-    start_time: time
-    end_time: time
+# Alias por si algún import viejo queda
+PatientCreate = PacienteCreate
+PatientUpdate = PacienteUpdate
+PatientRead = PacienteRead
 
 
-class ScheduleBlockCreate(ScheduleBlockBase):
+class BloqueHorarioBase(BaseModel):
+    dia_semana: int = Field(..., ge=0, le=6)
+    hora_inicio: time
+    hora_fin: time
+
+
+class BloqueHorarioCreate(BloqueHorarioBase):
     doctor_id: int
 
 
-class ScheduleBlockRead(ScheduleBlockBase):
+class BloqueHorarioRead(BloqueHorarioBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     doctor_id: int
 
 
-class SlotRead(BaseModel):
-    starts_at: datetime
-    ends_at: datetime
+ScheduleBlockCreate = BloqueHorarioCreate
+ScheduleBlockRead = BloqueHorarioRead
 
 
-class AppointmentCreate(BaseModel):
+class EspacioLibre(BaseModel):
+    inicio: datetime
+    fin: datetime
+
+
+SlotRead = EspacioLibre
+
+
+class CitaCreate(BaseModel):
     doctor_id: int
-    patient_id: int
-    starts_at: datetime
-    notes: str | None = None
+    paciente_id: int
+    inicio: datetime
+    notas: str | None = None
 
 
-class AppointmentReschedule(BaseModel):
-    starts_at: datetime
+class CitaReprogramar(BaseModel):
+    inicio: datetime
 
 
-class AppointmentCancel(BaseModel):
-    reason: str = Field(..., min_length=1, max_length=500)
+class CitaCancelar(BaseModel):
+    motivo: str = Field(..., min_length=1, max_length=500)
 
 
-class PaymentRead(BaseModel):
+AppointmentCreate = CitaCreate
+AppointmentReschedule = CitaReprogramar
+AppointmentCancel = CitaCancelar
+
+
+class PagoRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    appointment_id: int
-    amount: float
-    status: PaymentStatus
-    method: str | None
-    paid_at: datetime | None
-    notes: str | None
+    cita_id: int
+    monto: float
+    estado: EstadoPago
+    metodo: str | None
+    fecha_pago: datetime | None
+    notas: str | None
     created_at: datetime
 
 
-class PaymentUpdate(BaseModel):
-    status: PaymentStatus | None = None
-    method: str | None = Field(default=None, max_length=30)
-    amount: float | None = Field(default=None, ge=0)
-    notes: str | None = Field(default=None, max_length=500)
+class PagoUpdate(BaseModel):
+    estado: EstadoPago | None = None
+    metodo: str | None = Field(default=None, max_length=30)
+    monto: float | None = Field(default=None, ge=0)
+    notas: str | None = Field(default=None, max_length=500)
 
 
-class AppointmentRead(BaseModel):
+PaymentRead = PagoRead
+PaymentUpdate = PagoUpdate
+PaymentStatus = EstadoPago
+
+
+class CitaRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     doctor_id: int
-    patient_id: int
-    starts_at: datetime
-    ends_at: datetime
-    status: AppointmentStatus
-    notes: str | None
-    cancellation_reason: str | None
-    cancelled_at: datetime | None
+    paciente_id: int
+    inicio: datetime
+    fin: datetime
+    estado: EstadoCita
+    notas: str | None
+    motivo_cancelacion: str | None
+    cancelada_en: datetime | None
     created_at: datetime
-    payment: PaymentRead | None = None
-    doctor_name: str | None = None
-    patient_name: str | None = None
-    patient_document: str | None = None
+    pago: PagoRead | None = None
+    nombre_doctor: str | None = None
+    nombre_paciente: str | None = None
+    documento_paciente: str | None = None
+
+
+AppointmentRead = CitaRead
+AppointmentStatus = EstadoCita
 
 
 class DashboardStats(BaseModel):

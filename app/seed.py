@@ -2,159 +2,149 @@ from datetime import datetime, time, timedelta
 
 from sqlalchemy.orm import Session
 
-from app.models import (
-    Appointment,
-    AppointmentStatus,
-    Doctor,
-    Patient,
-    Payment,
-    PaymentStatus,
-    ScheduleBlock,
-)
+from app.models import BloqueHorario, Cita, Doctor, EstadoCita, EstadoPago, Paciente, Pago
 
 
 def seed_if_empty(db: Session) -> None:
     if db.query(Doctor).count() > 0:
         return
 
-    doctors_data = [
-        {
-            "full_name": "Dra. Ana Martínez",
-            "specialty": "Cardiología",
-            "consultation_minutes": 30,
-            "default_fee": 800.0,
-        },
-        {
-            "full_name": "Dr. Luis Herrera",
-            "specialty": "Pediatría",
-            "consultation_minutes": 25,
-            "default_fee": 600.0,
-        },
-        {
-            "full_name": "Dra. Carmen Ruiz",
-            "specialty": "Medicina General",
-            "consultation_minutes": 20,
-            "default_fee": 450.0,
-        },
+    doctores = [
+        Doctor(
+            nombre_completo="Dra. Ana Martínez",
+            especialidad="Dermatología",
+            minutos_consulta=30,
+            tarifa=800.0,
+            activo=True,
+        ),
+        Doctor(
+            nombre_completo="Dr. Luis Herrera",
+            especialidad="Pediatría",
+            minutos_consulta=30,
+            tarifa=600.0,
+            activo=True,
+        ),
+        Doctor(
+            nombre_completo="Dra. Carmen Ruiz",
+            especialidad="Medicina General",
+            minutos_consulta=30,
+            tarifa=450.0,
+            activo=True,
+        ),
+        Doctor(
+            nombre_completo="Dra. Sofía Reyes",
+            especialidad="Ginecología",
+            minutos_consulta=30,
+            tarifa=700.0,
+            activo=True,
+        ),
     ]
-
-    doctors: list[Doctor] = []
-    for data in doctors_data:
-        doctor = Doctor(**data, is_active=True)
+    for doctor in doctores:
         db.add(doctor)
-        doctors.append(doctor)
     db.flush()
 
-    for doctor in doctors:
-        for weekday in range(5):
-            for start_h, end_h in [(9, 13), (15, 18)]:
+    for doctor in doctores:
+        for dia in range(5):
+            for h_ini, h_fin in [(9, 13), (15, 18)]:
                 db.add(
-                    ScheduleBlock(
+                    BloqueHorario(
                         doctor_id=doctor.id,
-                        weekday=weekday,
-                        start_time=time(start_h, 0),
-                        end_time=time(end_h, 0),
+                        dia_semana=dia,
+                        hora_inicio=time(h_ini, 0),
+                        hora_fin=time(h_fin, 0),
                     )
                 )
 
-    patients_data = [
-        {
-            "full_name": "María González",
-            "document_id": "DOC-001",
-            "phone": "555-0101",
-            "email": "maria@email.com",
-        },
-        {
-            "full_name": "Carlos Pérez",
-            "document_id": "DOC-002",
-            "phone": "555-0102",
-            "email": "carlos@email.com",
-        },
-        {
-            "full_name": "Laura Sánchez",
-            "document_id": "DOC-003",
-            "phone": "555-0103",
-            "email": "laura@email.com",
-        },
-        {
-            "full_name": "Roberto Díaz",
-            "document_id": "DOC-004",
-            "phone": "555-0104",
-            "email": "roberto@email.com",
-        },
+    pacientes = [
+        Paciente(
+            nombre_completo="María González",
+            documento="DOC-001",
+            telefono="555-0101",
+            correo="maria@email.com",
+        ),
+        Paciente(
+            nombre_completo="Carlos Pérez",
+            documento="DOC-002",
+            telefono="555-0102",
+            correo="carlos@email.com",
+        ),
+        Paciente(
+            nombre_completo="Laura Sánchez",
+            documento="DOC-003",
+            telefono="555-0103",
+            correo="laura@email.com",
+        ),
+        Paciente(
+            nombre_completo="Roberto Díaz",
+            documento="DOC-004",
+            telefono="555-0104",
+            correo="roberto@email.com",
+        ),
     ]
-
-    patients: list[Patient] = []
-    for data in patients_data:
-        patient = Patient(**data)
-        db.add(patient)
-        patients.append(patient)
+    for paciente in pacientes:
+        db.add(paciente)
     db.flush()
 
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    next_monday = today + timedelta(days=(7 - today.weekday()) % 7 or 7)
-    next_monday = next_monday.replace(hour=9, minute=0)
+    hoy = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    lunes = hoy + timedelta(days=(7 - hoy.weekday()) % 7 or 7)
 
-    appt1_start = next_monday
-    appt1_end = appt1_start + timedelta(minutes=doctors[0].consultation_minutes)
-    appt1 = Appointment(
-        doctor_id=doctors[0].id,
-        patient_id=patients[0].id,
-        starts_at=appt1_start,
-        ends_at=appt1_end,
-        status=AppointmentStatus.scheduled,
-        notes="Control cardíaco",
+    cita1_inicio = lunes.replace(hour=9, minute=0)
+    cita1 = Cita(
+        doctor_id=doctores[0].id,
+        paciente_id=pacientes[0].id,
+        inicio=cita1_inicio,
+        fin=cita1_inicio + timedelta(minutes=doctores[0].minutos_consulta),
+        estado=EstadoCita.programada,
+        notas="Control cardíaco",
     )
-    db.add(appt1)
+    db.add(cita1)
     db.flush()
     db.add(
-        Payment(
-            appointment_id=appt1.id,
-            amount=doctors[0].default_fee,
-            status=PaymentStatus.paid,
-            method="card",
-            paid_at=datetime.utcnow(),
+        Pago(
+            cita_id=cita1.id,
+            monto=doctores[0].tarifa,
+            estado=EstadoPago.pagado,
+            metodo="card",
+            fecha_pago=datetime.utcnow(),
         )
     )
 
-    appt2_start = next_monday.replace(hour=10, minute=0)
-    appt2_end = appt2_start + timedelta(minutes=doctors[1].consultation_minutes)
-    appt2 = Appointment(
-        doctor_id=doctors[1].id,
-        patient_id=patients[1].id,
-        starts_at=appt2_start,
-        ends_at=appt2_end,
-        status=AppointmentStatus.scheduled,
-        notes="Revisión pediátrica",
+    cita2_inicio = lunes.replace(hour=10, minute=0)
+    cita2 = Cita(
+        doctor_id=doctores[1].id,
+        paciente_id=pacientes[1].id,
+        inicio=cita2_inicio,
+        fin=cita2_inicio + timedelta(minutes=doctores[1].minutos_consulta),
+        estado=EstadoCita.programada,
+        notas="Revisión pediátrica",
     )
-    db.add(appt2)
+    db.add(cita2)
     db.flush()
     db.add(
-        Payment(
-            appointment_id=appt2.id,
-            amount=doctors[1].default_fee,
-            status=PaymentStatus.pending,
+        Pago(
+            cita_id=cita2.id,
+            monto=doctores[1].tarifa,
+            estado=EstadoPago.pendiente,
         )
     )
 
-    appt3_start = next_monday.replace(hour=15, minute=0)
-    appt3_end = appt3_start + timedelta(minutes=doctors[2].consultation_minutes)
-    appt3 = Appointment(
-        doctor_id=doctors[2].id,
-        patient_id=patients[2].id,
-        starts_at=appt3_start,
-        ends_at=appt3_end,
-        status=AppointmentStatus.scheduled,
-        notes="Consulta general",
+    cita3_inicio = lunes.replace(hour=15, minute=0)
+    cita3 = Cita(
+        doctor_id=doctores[2].id,
+        paciente_id=pacientes[2].id,
+        inicio=cita3_inicio,
+        fin=cita3_inicio + timedelta(minutes=doctores[2].minutos_consulta),
+        estado=EstadoCita.programada,
+        notas="Consulta general",
     )
-    db.add(appt3)
+    db.add(cita3)
     db.flush()
     db.add(
-        Payment(
-            appointment_id=appt3.id,
-            amount=doctors[2].default_fee,
-            status=PaymentStatus.exempt,
-            notes="Paciente con convenio",
+        Pago(
+            cita_id=cita3.id,
+            monto=doctores[2].tarifa,
+            estado=EstadoPago.exento,
+            notas="Paciente con convenio",
         )
     )
 

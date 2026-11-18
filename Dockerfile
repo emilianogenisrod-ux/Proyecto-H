@@ -9,7 +9,6 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -18,11 +17,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY app ./app
 COPY sql ./sql
 
-RUN mkdir -p /app/data /app/media/images /app/media/videos /app/media/avatars /app/media/templates \
-    && useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin appuser \
-    && chown -R appuser:appuser /app
-
-USER appuser
+RUN mkdir -p /app/data /app/media/images /app/media/videos /app/media/avatars /app/media/templates
 
 EXPOSE 8000
 

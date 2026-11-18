@@ -17,24 +17,24 @@ async function loadDashboard() {
   }
   try {
     const note = document.getElementById("doctor-profile-note");
-    if (note) note.textContent = `${USER.name}${USER.specialty ? " · " + USER.specialty : ""}`;
+    if (note) note.textContent = `${USER.name}${USER.especialidad ? " · " + USER.especialidad : ""}`;
 
     const [appts, blocks] = await Promise.all([
       api(`/appointments?doctor_id=${DOCTOR_ID}`),
       api(`/doctors/${DOCTOR_ID}/schedules`),
     ]);
     const today = todayISO();
-    const todayCount = appts.filter((a) => a.starts_at.slice(0, 10) === today && a.status === "scheduled").length;
+    const todayCount = appts.filter((a) => a.inicio.slice(0, 10) === today && a.estado === "scheduled").length;
     document.getElementById("doc-stat-today").textContent = todayCount;
-    document.getElementById("doc-stat-week").textContent = appts.filter((a) => a.status === "scheduled").length;
+    document.getElementById("doc-stat-week").textContent = appts.filter((a) => a.estado === "scheduled").length;
     document.getElementById("doc-stat-blocks").textContent = blocks.length;
 
     const upcoming = appts
-      .filter((a) => a.status === "scheduled" && new Date(a.starts_at) >= new Date())
+      .filter((a) => a.estado === "scheduled" && new Date(a.inicio) >= new Date())
       .slice(0, 10);
     document.getElementById("doctor-upcoming").innerHTML = upcoming.length
       ? `<table><thead><tr><th>Fecha</th><th>Paciente</th><th>Notas</th><th>Estado</th></tr></thead><tbody>
-        ${upcoming.map((a) => `<tr><td>${fmtDateTime(a.starts_at)}</td><td>${a.patient_name || "—"}</td><td>${a.notes || "—"}</td><td>${badge(a.status)}</td></tr>`).join("")}
+        ${upcoming.map((a) => `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_paciente || "—"}</td><td>${a.notes || "—"}</td><td>${badge(a.estado)}</td></tr>`).join("")}
       </tbody></table>`
       : empty("No tiene citas próximas");
   } catch (e) {
@@ -62,7 +62,7 @@ async function loadAppointments() {
     const appts = await api(`/appointments?doctor_id=${DOCTOR_ID}`);
     document.getElementById("doctor-appointments").innerHTML = appts.length
       ? `<table><thead><tr><th>Fecha</th><th>Paciente</th><th>Estado</th><th>Pago</th></tr></thead><tbody>
-        ${appts.map((a) => `<tr><td>${fmtDateTime(a.starts_at)}</td><td>${a.patient_name || "—"}</td><td>${badge(a.status)}</td><td>${a.payment ? badge(a.payment.status) : "—"}</td></tr>`).join("")}
+        ${appts.map((a) => `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_paciente || "—"}</td><td>${badge(a.estado)}</td><td>${a.pago ? badge(a.pago.status) : "—"}</td></tr>`).join("")}
       </tbody></table>`
       : empty("Sin citas");
   } catch (e) {
@@ -75,7 +75,7 @@ async function loadPatients() {
     const patients = await api("/patients");
     document.getElementById("doctor-patients").innerHTML = patients.length
       ? `<table><thead><tr><th>Nombre</th><th>Documento</th><th>Teléfono</th><th>Email</th></tr></thead><tbody>
-        ${patients.map((p) => `<tr><td>${p.full_name}</td><td>${p.document_id}</td><td>${p.phone || "—"}</td><td>${p.email || "—"}</td></tr>`).join("")}
+        ${patients.map((p) => `<tr><td>${p.nombre_completo}</td><td>${p.documento}</td><td>${p.telefono || "—"}</td><td>${p.correo || "—"}</td></tr>`).join("")}
       </tbody></table>`
       : empty("Sin pacientes");
   } catch (e) {

@@ -17,15 +17,15 @@ async function loadDashboard() {
     return;
   }
   try {
-    const appts = await api(`/appointments?patient_id=${PATIENT_ID}`);
-    const scheduled = appts.filter((a) => a.status === "scheduled");
-    const pendingPay = scheduled.filter((a) => a.payment && a.payment.status === "pending").length;
+    const appts = await api(`/appointments?paciente_id=${PATIENT_ID}`);
+    const scheduled = appts.filter((a) => a.estado === "scheduled");
+    const pendingPay = scheduled.filter((a) => a.pago && a.pago.estado === "pending").length;
     document.getElementById("pat-stat-appts").textContent = scheduled.length;
     document.getElementById("pat-stat-pending").textContent = pendingPay;
-    const upcoming = scheduled.filter((a) => new Date(a.starts_at) >= new Date()).slice(0, 8);
+    const upcoming = scheduled.filter((a) => new Date(a.inicio) >= new Date()).slice(0, 8);
     document.getElementById("patient-upcoming").innerHTML = upcoming.length
       ? `<table><thead><tr><th>Fecha</th><th>Doctor</th><th>Estado</th><th>Pago</th></tr></thead><tbody>
-        ${upcoming.map((a) => `<tr><td>${fmtDateTime(a.starts_at)}</td><td>${a.doctor_name || "—"}</td><td>${badge(a.status)}</td><td>${a.payment ? badge(a.payment.status) : "—"}</td></tr>`).join("")}
+        ${upcoming.map((a) => `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_doctor || "—"}</td><td>${badge(a.estado)}</td><td>${a.pago ? badge(a.pago.status) : "—"}</td></tr>`).join("")}
       </tbody></table>`
       : empty("No tiene citas próximas. Use Agendar para reservar.");
   } catch (e) {
@@ -33,12 +33,29 @@ async function loadDashboard() {
   }
 }
 
+let _patDoctors = [];
+
+function fillPatientDoctors() {
+  const specialty = document.getElementById("pat-specialty")?.value || "";
+  const sel = document.getElementById("pat-doctor");
+  if (!sel) return;
+  const list = _patDoctors.filter(
+    (d) => d.activo && (!specialty || d.especialidad === specialty)
+  );
+  if (!specialty) {
+    sel.innerHTML = '<option value="">Seleccione especialidad</option>';
+    return;
+  }
+  sel.innerHTML = list.length
+    ? list.map((d) => `<option value="${d.id}">${d.nombre_completo}</option>`).join("")
+    : '<option value="">Sin doctores en esa especialidad</option>';
+}
+
 async function loadBook() {
   try {
     const doctors = await api("/doctors");
-    const active = doctors.filter((d) => d.is_active);
-    const sel = document.getElementById("pat-doctor");
-    sel.innerHTML = active.map((d) => `<option value="${d.id}">${d.full_name} — ${d.specialty}</option>`).join("");
+    _patDoctors = doctors.filter((d) => d.activo);
+    fillPatientDoctors();
     const date = document.getElementById("pat-date");
     if (!date.value) date.value = todayISO();
     await refreshSlots();
@@ -58,29 +75,33 @@ async function refreshSlots() {
   try {
     const slots = await api(`/doctors/${doctorId}/slots?day=${day}`, { silent: true });
     slotSel.innerHTML = slots.length
-      ? slots.map((s) => `<option value="${s.starts_at}">${fmtTime(s.starts_at)} – ${fmtTime(s.ends_at)}</option>`).join("")
+      ? slots.map((s) => `<option value="${s.inicio}">${fmtTime(s.inicio)} – ${fmtTime(s.fin)}</option>`).join("")
       : '<option value="">Sin horarios disponibles</option>';
   } catch (e) {
     slotSel.innerHTML = '<option value="">Error al cargar slots</option>';
   }
 }
 
+document.getElementById("pat-specialty")?.addEventListener("change", async () => {
+  fillPatientDoctors();
+  await refreshSlots();
+});
 document.getElementById("pat-doctor")?.addEventListener("change", refreshSlots);
 document.getElementById("pat-date")?.addEventListener("change", refreshSlots);
 
 document.getElementById("patient-book-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!PATIENT_ID) return toast("Paciente no vinculado", "error");
-  const starts_at = document.getElementById("pat-slot").value;
-  if (!starts_at) return toast("Seleccione un horario", "error");
+  const inicio = document.getElementById("pat-slot").value;
+  if (!inicio) return toast("Seleccione un horario", "error");
   try {
     await api("/appointments", {
       method: "POST",
       body: JSON.stringify({
         doctor_id: Number(document.getElementById("pat-doctor").value),
-        patient_id: PATIENT_ID,
-        starts_at,
-        notes: document.getElementById("pat-notes").value || null,
+        paciente_id: PATIENT_ID,
+        inicio,
+        notas: document.getElementById("pat-notes").value || null,
       }),
     });
     toast("Cita agendada correctamente");
@@ -94,10 +115,10 @@ document.getElementById("patient-book-form")?.addEventListener("submit", async (
 async function loadAppointments() {
   if (!PATIENT_ID) return;
   try {
-    const appts = await api(`/appointments?patient_id=${PATIENT_ID}`);
+    const appts = await api(`/appointments?paciente_id=${PATIENT_ID}`);
     document.getElementById("patient-appointments").innerHTML = appts.length
       ? `<table><thead><tr><th>Fecha</th><th>Doctor</th><th>Estado</th><th>Notas</th></tr></thead><tbody>
-        ${appts.map((a) => `<tr><td>${fmtDateTime(a.starts_at)}</td><td>${a.doctor_name || "—"}</td><td>${badge(a.status)}</td><td>${a.notes || "—"}</td></tr>`).join("")}
+        ${appts.map((a) => `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_doctor || "—"}</td><td>${badge(a.estado)}</td><td>${a.notes || "—"}</td></tr>`).join("")}
       </tbody></table>`
       : empty("Aún no tiene citas");
   } catch (e) {
@@ -108,11 +129,11 @@ async function loadAppointments() {
 async function loadPayments() {
   if (!PATIENT_ID) return;
   try {
-    const appts = await api(`/appointments?patient_id=${PATIENT_ID}`);
-    const rows = appts.filter((a) => a.payment).map((a) => ({ ...a.payment, when: a.starts_at, doctor: a.doctor_name }));
+    const appts = await api(`/appointments?paciente_id=${PATIENT_ID}`);
+    const rows = appts.filter((a) => a.pago).map((a) => ({ ...a.pago, when: a.inicio, doctor: a.nombre_doctor }));
     document.getElementById("patient-payments").innerHTML = rows.length
       ? `<table><thead><tr><th>Cita</th><th>Doctor</th><th>Monto</th><th>Estado</th></tr></thead><tbody>
-        ${rows.map((p) => `<tr><td>${fmtDateTime(p.when)}</td><td>${p.doctor || "—"}</td><td>$${Number(p.amount).toFixed(2)}</td><td>${badge(p.status)}</td></tr>`).join("")}
+        ${rows.map((p) => `<tr><td>${fmtDateTime(p.when)}</td><td>${p.doctor || "—"}</td><td>$${Number(p.monto).toFixed(2)}</td><td>${badge(p.estado)}</td></tr>`).join("")}
       </tbody></table>`
       : empty("Sin pagos registrados");
   } catch (e) {
@@ -129,10 +150,10 @@ async function loadProfile() {
     const p = await api(`/patients/${PATIENT_ID}`);
     document.getElementById("patient-profile").innerHTML = `
       <dl class="profile-grid">
-        <div><dt>Nombre</dt><dd>${p.full_name}</dd></div>
-        <div><dt>Documento</dt><dd>${p.document_id}</dd></div>
-        <div><dt>Teléfono</dt><dd>${p.phone || "—"}</dd></div>
-        <div><dt>Email</dt><dd>${p.email || "—"}</dd></div>
+        <div><dt>Nombre</dt><dd>${p.nombre_completo}</dd></div>
+        <div><dt>Documento</dt><dd>${p.documento}</dd></div>
+        <div><dt>Teléfono</dt><dd>${p.telefono || "—"}</dd></div>
+        <div><dt>Email</dt><dd>${p.correo || "—"}</dd></div>
         <div><dt>Rol</dt><dd>${USER.role_label || "Paciente"}</dd></div>
       </dl>`;
   } catch (e) {

@@ -23,3 +23,8 @@ secrets/
 *.egg-info/
 dist/
 build/
+
+# Entregables PDF / binarios grandes (no van al código)
+*.pdf
+app/assets/
+diagrama_clases.png

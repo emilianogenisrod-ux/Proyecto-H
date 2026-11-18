@@ -1,65 +1,61 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import Appointment, Payment, PaymentStatus
-from app.schemas import PaymentRead, PaymentUpdate
+from app.models import Cita, EstadoPago, Pago
+from app.schemas import PagoRead, PagoUpdate
 
 router = APIRouter(prefix="/payments", tags=["Pagos"])
 
 
-def _serialize_payment(payment: Payment) -> PaymentRead:
-    return PaymentRead.model_validate(payment)
-
-
-@router.get("", response_model=list[PaymentRead])
-def list_payments(
-    status_filter: PaymentStatus | None = Query(default=None, alias="status"),
+@router.get("", response_model=list[PagoRead])
+def listar_pagos(
+    status_filter: EstadoPago | None = Query(default=None, alias="status"),
     doctor_id: int | None = None,
     db: Session = Depends(get_db),
 ):
-    query = (
-        db.query(Payment)
-        .join(Appointment)
-        .options(joinedload(Payment.appointment))
-        .order_by(Payment.created_at.desc())
+    consulta = (
+        db.query(Pago)
+        .join(Cita)
+        .options(joinedload(Pago.cita))
+        .order_by(Pago.created_at.desc())
     )
     if status_filter:
-        query = query.filter(Payment.status == status_filter)
+        consulta = consulta.filter(Pago.estado == status_filter)
     if doctor_id:
-        query = query.filter(Appointment.doctor_id == doctor_id)
-    return [_serialize_payment(p) for p in query.all()]
+        consulta = consulta.filter(Cita.doctor_id == doctor_id)
+    return consulta.all()
 
 
-@router.get("/{payment_id}", response_model=PaymentRead)
-def get_payment(payment_id: int, db: Session = Depends(get_db)):
-    payment = db.get(Payment, payment_id)
-    if not payment:
+@router.get("/{pago_id}", response_model=PagoRead)
+def obtener_pago(pago_id: int, db: Session = Depends(get_db)):
+    pago = db.get(Pago, pago_id)
+    if not pago:
         raise HTTPException(status_code=404, detail="Pago no encontrado")
-    return _serialize_payment(payment)
+    return pago
 
 
-@router.patch("/{payment_id}", response_model=PaymentRead)
-def update_payment(payment_id: int, payload: PaymentUpdate, db: Session = Depends(get_db)):
-    payment = db.get(Payment, payment_id)
-    if not payment:
+@router.patch("/{pago_id}", response_model=PagoRead)
+def actualizar_pago(pago_id: int, payload: PagoUpdate, db: Session = Depends(get_db)):
+    pago = db.get(Pago, pago_id)
+    if not pago:
         raise HTTPException(status_code=404, detail="Pago no encontrado")
 
-    data = payload.model_dump(exclude_unset=True)
-    new_status = data.pop("status", None)
-    for field, value in data.items():
-        setattr(payment, field, value)
+    cambios = payload.model_dump(exclude_unset=True)
+    nuevo_estado = cambios.pop("estado", None)
 
-    if new_status:
-        payment.status = new_status
-        if new_status == PaymentStatus.paid and not payment.paid_at:
-            payment.paid_at = datetime.utcnow()
-        if new_status in {PaymentStatus.pending, PaymentStatus.partial, PaymentStatus.exempt}:
-            if new_status != PaymentStatus.partial:
-                payment.paid_at = None
+    for campo, valor in cambios.items():
+        setattr(pago, campo, valor)
+
+    if nuevo_estado is not None:
+        pago.estado = nuevo_estado
+        if nuevo_estado == EstadoPago.pagado and not pago.fecha_pago:
+            pago.fecha_pago = datetime.utcnow()
+        if nuevo_estado in {EstadoPago.pendiente, EstadoPago.exento}:
+            pago.fecha_pago = None
 
     db.commit()
-    db.refresh(payment)
-    return _serialize_payment(payment)
+    db.refresh(pago)
+    return pago

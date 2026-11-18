@@ -26,7 +26,7 @@ async function loadDashboard() {
     const upcoming = appts.slice(0, 8);
     document.getElementById("director-recent").innerHTML = upcoming.length
       ? `<table><thead><tr><th>Fecha</th><th>Doctor</th><th>Paciente</th><th>Estado</th></tr></thead><tbody>
-        ${upcoming.map((a) => `<tr><td>${fmtDateTime(a.starts_at)}</td><td>${a.doctor_name || "—"}</td><td>${a.patient_name || "—"}</td><td>${badge(a.status)}</td></tr>`).join("")}
+        ${upcoming.map((a) => `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_doctor || "—"}</td><td>${a.nombre_paciente || "—"}</td><td>${badge(a.estado)}</td></tr>`).join("")}
       </tbody></table>`
       : empty("Sin actividad programada");
   } catch (e) {
@@ -39,7 +39,7 @@ async function loadAppointments() {
     const appts = await api("/appointments");
     document.getElementById("director-appointments").innerHTML = appts.length
       ? `<table><thead><tr><th>Fecha</th><th>Doctor</th><th>Paciente</th><th>Estado</th><th>Pago</th></tr></thead><tbody>
-        ${appts.map((a) => `<tr><td>${fmtDateTime(a.starts_at)}</td><td>${a.doctor_name || "—"}</td><td>${a.patient_name || "—"}</td><td>${badge(a.status)}</td><td>${a.payment ? badge(a.payment.status) : "—"}</td></tr>`).join("")}
+        ${appts.map((a) => `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_doctor || "—"}</td><td>${a.nombre_paciente || "—"}</td><td>${badge(a.estado)}</td><td>${a.pago ? badge(a.pago.status) : "—"}</td></tr>`).join("")}
       </tbody></table>`
       : empty("No hay citas");
   } catch (e) {
@@ -52,7 +52,7 @@ async function loadPayments() {
     const payments = await api("/payments");
     document.getElementById("director-payments").innerHTML = payments.length
       ? `<table><thead><tr><th>Cita</th><th>Monto</th><th>Estado</th><th>Método</th></tr></thead><tbody>
-        ${payments.map((p) => `<tr><td>#${p.appointment_id}</td><td>$${Number(p.amount).toFixed(2)}</td><td>${badge(p.status)}</td><td>${p.method || "—"}</td></tr>`).join("")}
+        ${payments.map((p) => `<tr><td>#${p.cita_id}</td><td>$${Number(p.monto).toFixed(2)}</td><td>${badge(p.estado)}</td><td>${p.method || "—"}</td></tr>`).join("")}
       </tbody></table>`
       : empty("No hay pagos");
   } catch (e) {
@@ -65,12 +65,12 @@ async function loadStaff() {
     const [doctors, patients] = await Promise.all([api("/doctors"), api("/patients")]);
     document.getElementById("director-doctors").innerHTML = doctors.length
       ? `<table><thead><tr><th>Nombre</th><th>Especialidad</th><th>Tarifa</th><th>Estado</th></tr></thead><tbody>
-        ${doctors.map((d) => `<tr><td>${d.full_name}</td><td>${d.specialty}</td><td>$${Number(d.default_fee).toFixed(2)}</td><td>${d.is_active ? "Activo" : "Inactivo"}</td></tr>`).join("")}
+        ${doctors.map((d) => `<tr><td>${d.nombre_completo}</td><td>${d.especialidad}</td><td>$${Number(d.tarifa).toFixed(2)}</td><td>${d.activo ? "Activo" : "Inactivo"}</td></tr>`).join("")}
       </tbody></table>`
       : empty("Sin doctores");
     document.getElementById("director-patients").innerHTML = patients.length
       ? `<table><thead><tr><th>Nombre</th><th>Documento</th><th>Teléfono</th><th>Email</th></tr></thead><tbody>
-        ${patients.map((p) => `<tr><td>${p.full_name}</td><td>${p.document_id}</td><td>${p.phone || "—"}</td><td>${p.email || "—"}</td></tr>`).join("")}
+        ${patients.map((p) => `<tr><td>${p.nombre_completo}</td><td>${p.documento}</td><td>${p.telefono || "—"}</td><td>${p.correo || "—"}</td></tr>`).join("")}
       </tbody></table>`
       : empty("Sin pacientes");
   } catch (e) {
@@ -82,8 +82,8 @@ async function loadReports() {
   try {
     const stats = await api("/appointments/stats/dashboard");
     const payments = await api("/payments");
-    const paid = payments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
-    const pending = payments.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0);
+    const paid = payments.filter((p) => p.estado === "paid").reduce((s, p) => s + Number(p.monto), 0);
+    const pending = payments.filter((p) => p.estado === "pending").reduce((s, p) => s + Number(p.monto), 0);
     document.getElementById("director-reports").innerHTML = `
       <div class="stats-grid" style="grid-template-columns: repeat(2,minmax(0,1fr)); margin-bottom:0;">
         <article class="stat-card"><div class="stat-card__value">${stats.appointments_today}</div><div class="stat-card__label">Citas del día</div></article>

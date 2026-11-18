@@ -1,68 +1,95 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Doctor, ScheduleBlock
-from app.schemas import ScheduleBlockCreate, ScheduleBlockRead, SlotRead
-from app.services.availability import generate_available_slots
+from app.models import BloqueHorario, Doctor
+from app.schemas import BloqueHorarioCreate, BloqueHorarioRead, EspacioLibre
+from app.services.availability import generar_espacios_libres
+from app.services.schedule_gen import generar_horarios_aleatorios
 
 router = APIRouter(tags=["Horarios"])
 
-WEEKDAY_NAMES = [
-    "Lunes",
-    "Martes",
-    "Miércoles",
-    "Jueves",
-    "Viernes",
-    "Sábado",
-    "Domingo",
-]
+
+class GenerarHorariosRequest(BaseModel):
+    reemplazar: bool = Field(
+        default=False,
+        description="Si ya hay horarios, bórralos y genera de nuevo",
+    )
 
 
-@router.get("/doctors/{doctor_id}/schedules", response_model=list[ScheduleBlockRead])
-def list_schedules(doctor_id: int, db: Session = Depends(get_db)):
+@router.get("/doctors/{doctor_id}/schedules", response_model=list[BloqueHorarioRead])
+def listar_horarios(doctor_id: int, db: Session = Depends(get_db)):
     doctor = db.get(Doctor, doctor_id)
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor no encontrado")
     return (
-        db.query(ScheduleBlock)
-        .filter(ScheduleBlock.doctor_id == doctor_id)
-        .order_by(ScheduleBlock.weekday, ScheduleBlock.start_time)
+        db.query(BloqueHorario)
+        .filter(BloqueHorario.doctor_id == doctor_id)
+        .order_by(BloqueHorario.dia_semana, BloqueHorario.hora_inicio)
         .all()
     )
 
 
-@router.post("/schedules", response_model=ScheduleBlockRead, status_code=status.HTTP_201_CREATED)
-def create_schedule(payload: ScheduleBlockCreate, db: Session = Depends(get_db)):
-    if payload.start_time >= payload.end_time:
-        raise HTTPException(status_code=400, detail="La hora de inicio debe ser anterior a la de fin")
+@router.post("/schedules", response_model=BloqueHorarioRead, status_code=status.HTTP_201_CREATED)
+def crear_horario(payload: BloqueHorarioCreate, db: Session = Depends(get_db)):
+    if payload.hora_inicio >= payload.hora_fin:
+        raise HTTPException(status_code=400, detail="La hora de inicio debe ser antes que la de fin")
+
     doctor = db.get(Doctor, payload.doctor_id)
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor no encontrado")
-    block = ScheduleBlock(**payload.model_dump())
-    db.add(block)
+
+    bloque = BloqueHorario(**payload.model_dump())
+    db.add(bloque)
     db.commit()
-    db.refresh(block)
-    return block
+    db.refresh(bloque)
+    return bloque
 
 
-@router.delete("/schedules/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_schedule(schedule_id: int, db: Session = Depends(get_db)):
-    block = db.get(ScheduleBlock, schedule_id)
-    if not block:
+@router.delete("/schedules/{horario_id}", status_code=status.HTTP_204_NO_CONTENT)
+def borrar_horario(horario_id: int, db: Session = Depends(get_db)):
+    bloque = db.get(BloqueHorario, horario_id)
+    if not bloque:
         raise HTTPException(status_code=404, detail="Horario no encontrado")
-    db.delete(block)
+    db.delete(bloque)
     db.commit()
 
 
-@router.get("/doctors/{doctor_id}/slots", response_model=list[SlotRead])
-def list_available_slots(doctor_id: int, day: date, db: Session = Depends(get_db)):
+@router.post(
+    "/doctors/{doctor_id}/schedules/generate",
+    response_model=list[BloqueHorarioRead],
+    status_code=status.HTTP_201_CREATED,
+)
+def generar_horarios_doctor(
+    doctor_id: int,
+    payload: GenerarHorariosRequest | None = None,
+    db: Session = Depends(get_db),
+):
     doctor = db.get(Doctor, doctor_id)
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor no encontrado")
-    if not doctor.is_active:
+    reemplazar = payload.reemplazar if payload else False
+    try:
+        return generar_horarios_aleatorios(db, doctor, reemplazar=reemplazar)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/doctors/{doctor_id}/slots", response_model=list[EspacioLibre])
+def listar_espacios_libres(
+    doctor_id: int,
+    day: date,
+    excluir_cita_id: int | None = None,
+    db: Session = Depends(get_db),
+):
+    doctor = db.get(Doctor, doctor_id)
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor no encontrado")
+    if not doctor.activo:
         raise HTTPException(status_code=400, detail="El doctor no está activo")
-    slots = generate_available_slots(db, doctor, day)
-    return [SlotRead(starts_at=s, ends_at=e) for s, e in slots]
+
+    espacios = generar_espacios_libres(db, doctor, day, excluir_cita_id=excluir_cita_id)
+    return [EspacioLibre(inicio=ini, fin=fin) for ini, fin in espacios]

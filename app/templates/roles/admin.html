@@ -140,10 +140,21 @@
               <form id="doctor-form" class="form-grid">
                 <input type="hidden" id="doctor-id">
                 <label>Nombre completo<input type="text" id="doctor-name" required></label>
-                <label>Especialidad<input type="text" id="doctor-specialty" required></label>
+                <label>Especialidad
+                  <select id="doctor-especialidad" required>
+                    <option value="Medicina General">Medicina General</option>
+                    <option value="Pediatría">Pediatría</option>
+                    <option value="Ginecología">Ginecología</option>
+                    <option value="Dermatología">Dermatología</option>
+                  </select>
+                </label>
                 <label>Duración consulta (min)<input type="number" id="doctor-minutes" value="30" min="5" max="240" required></label>
                 <label>Tarifa default ($)<input type="number" id="doctor-fee" value="500" min="0" step="0.01" required></label>
                 <label class="checkbox-label"><input type="checkbox" id="doctor-active" checked> Activo</label>
+                <label class="checkbox-label" id="doctor-gen-schedule-wrap">
+                  <input type="checkbox" id="doctor-gen-schedule" checked>
+                  Generar horarios semanales al azar (prefiere turnos libres)
+                </label>
                 <div class="form-actions">
                   <button type="submit" class="btn btn-primary">Guardar</button>
                   <button type="button" class="btn btn-ghost" id="doctor-cancel-edit" style="display:none">Cancelar edición</button>
@@ -184,38 +195,59 @@
         </section>
 
         <!-- Horarios -->
-        <section id="panel-schedules" class="panel" data-title="Horarios" data-eyebrow="Disponibilidad" data-lead="Bloques semanales y consulta de slots libres.">
+        <section id="panel-schedules" class="panel" data-title="Horarios" data-eyebrow="Disponibilidad" data-lead="Define la semana laboral del doctor con turnos claros de mañana y tarde.">
           <div class="surface">
-            <header class="surface__head"><h2>Agregar bloque horario</h2></header>
+            <header class="surface__head"><h2>Doctor y semana</h2></header>
             <div class="surface__body">
-              <form id="schedule-form" class="form-grid">
-                <label>Doctor<select id="schedule-doctor" required></select></label>
-                <label>Día
-                  <select id="schedule-weekday" required>
-                    <option value="0">Lunes</option>
-                    <option value="1">Martes</option>
-                    <option value="2">Miércoles</option>
-                    <option value="3">Jueves</option>
-                    <option value="4">Viernes</option>
-                    <option value="5">Sábado</option>
-                    <option value="6">Domingo</option>
-                  </select>
+              <div class="filters schedule-doctor-bar">
+                <label>Doctor
+                  <select id="schedule-doctor" required></select>
                 </label>
-                <label>Inicio<input type="time" id="schedule-start" required></label>
-                <label>Fin<input type="time" id="schedule-end" required></label>
-                <div class="form-actions">
-                  <button type="submit" class="btn btn-primary">Agregar</button>
+                <input type="hidden" id="schedule-filter-doctor">
+                <button type="button" class="btn btn-ghost" id="schedule-generate-btn">Generar semana al azar</button>
+              </div>
+              <p class="profile-dialog__hint" id="schedule-doctor-meta">Elige un doctor para ver y editar su agenda.</p>
+            </div>
+          </div>
+
+          <div class="surface">
+            <header class="surface__head"><h2>Agregar turno</h2></header>
+            <div class="surface__body">
+              <form id="schedule-form" class="schedule-create">
+                <fieldset class="schedule-days">
+                  <legend>Días</legend>
+                  <label class="chip-check"><input type="checkbox" name="schedule-day" value="0" checked> Lun</label>
+                  <label class="chip-check"><input type="checkbox" name="schedule-day" value="1" checked> Mar</label>
+                  <label class="chip-check"><input type="checkbox" name="schedule-day" value="2" checked> Mié</label>
+                  <label class="chip-check"><input type="checkbox" name="schedule-day" value="3" checked> Jue</label>
+                  <label class="chip-check"><input type="checkbox" name="schedule-day" value="4" checked> Vie</label>
+                  <label class="chip-check"><input type="checkbox" name="schedule-day" value="5"> Sáb</label>
+                  <label class="chip-check"><input type="checkbox" name="schedule-day" value="6"> Dom</label>
+                </fieldset>
+
+                <div class="schedule-presets" role="group" aria-label="Turnos sugeridos">
+                  <button type="button" class="preset-btn" data-start="09:00" data-end="13:00">Mañana<br><small>9:00 – 13:00</small></button>
+                  <button type="button" class="preset-btn" data-start="15:00" data-end="18:00">Tarde<br><small>15:00 – 18:00</small></button>
+                  <button type="button" class="preset-btn" data-start="08:00" data-end="14:00">Jornada<br><small>8:00 – 14:00</small></button>
+                  <button type="button" class="preset-btn" data-start="14:00" data-end="20:00">Vespertino<br><small>14:00 – 20:00</small></button>
                 </div>
+
+                <div class="form-grid schedule-times">
+                  <label>Inicio<input type="time" id="schedule-start" value="09:00" required></label>
+                  <label>Fin<input type="time" id="schedule-end" value="13:00" required></label>
+                  <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Agregar a los días marcados</button>
+                  </div>
+                </div>
+                <p class="profile-dialog__hint">Marca varios días, elige un turno sugerido o ajusta la hora, y se agrega de una vez.</p>
               </form>
             </div>
           </div>
+
           <div class="surface">
             <header class="surface__head"><h2>Agenda semanal</h2></header>
             <div class="surface__body">
-              <div class="filters">
-                <label>Ver horarios de<select id="schedule-filter-doctor"></select></label>
-              </div>
-              <div id="schedules-table"></div>
+              <div id="schedules-table" class="schedule-week"></div>
             </div>
           </div>
           <div class="surface">
@@ -232,12 +264,22 @@
         </section>
 
         <!-- Citas -->
-        <section id="panel-appointments" class="panel" data-title="Citas" data-eyebrow="Agendamiento" data-lead="Reservar, filtrar, cancelar y reprogramar consultas.">
+        <section id="panel-appointments" class="panel" data-title="Citas" data-eyebrow="Agendamiento" data-lead="Reservar, filtrar, cancelar y reprogramar consultas. Solo horarios futuros (hora de México).">
           <div class="surface">
             <header class="surface__head"><h2>Nueva cita</h2></header>
             <div class="surface__body">
+              <p class="hint">Hoy solo se muestran horas futuras (hora de México). En días siguientes aparecen todos los turnos del doctor.</p>
               <form id="appointment-form" class="form-grid">
-                <label>Doctor<select id="appt-doctor" required></select></label>
+                <label>Especialidad
+                  <select id="appt-specialty" required>
+                    <option value="">Seleccione especialidad</option>
+                    <option value="Medicina General">Medicina General</option>
+                    <option value="Pediatría">Pediatría</option>
+                    <option value="Ginecología">Ginecología</option>
+                    <option value="Dermatología">Dermatología</option>
+                  </select>
+                </label>
+                <label>Doctor<select id="appt-doctor" required><option value="">Seleccione especialidad</option></select></label>
                 <label>Paciente<select id="appt-patient" required></select></label>
                 <label>Fecha<input type="date" id="appt-date" required></label>
                 <label>Horario<select id="appt-slot" required><option value="">Seleccione doctor y fecha</option></select></label>
@@ -373,6 +415,76 @@
       </div>
     </div>
   </footer>
+
+  <!-- Reprogramar cita -->
+  <dialog class="profile-dialog" id="reschedule-dialog" aria-labelledby="reschedule-title">
+    <form method="dialog" class="profile-dialog__card" id="reschedule-form">
+      <header class="profile-dialog__head">
+        <h2 id="reschedule-title">Reprogramar cita</h2>
+        <button type="submit" class="profile-dialog__close" value="cancel" aria-label="Cerrar">×</button>
+      </header>
+      <div class="profile-dialog__body">
+        <p class="profile-dialog__hint" id="reschedule-summary">—</p>
+        <label>Nueva fecha
+          <input type="date" id="reschedule-date" required>
+        </label>
+        <label>Horario disponible
+          <select id="reschedule-slot" required>
+            <option value="">Seleccione una fecha</option>
+          </select>
+        </label>
+        <p class="profile-dialog__hint">Solo aparecen horarios futuros (hora de México).</p>
+      </div>
+      <footer class="profile-dialog__actions">
+        <button type="submit" class="btn btn-ghost" value="cancel">Cancelar</button>
+        <button type="submit" class="btn btn-primary" value="save" id="reschedule-confirm">Guardar nueva hora</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Cancelar cita -->
+  <dialog class="profile-dialog" id="cancel-appt-dialog" aria-labelledby="cancel-appt-title">
+    <form method="dialog" class="profile-dialog__card" id="cancel-appt-form">
+      <header class="profile-dialog__head">
+        <h2 id="cancel-appt-title">Cancelar cita</h2>
+        <button type="submit" class="profile-dialog__close" value="cancel" aria-label="Cerrar">×</button>
+      </header>
+      <div class="profile-dialog__body">
+        <p class="profile-dialog__hint" id="cancel-appt-summary">—</p>
+        <label>Motivo
+          <textarea id="cancel-appt-reason" rows="3" required placeholder="Ej. El paciente no puede asistir"></textarea>
+        </label>
+      </div>
+      <footer class="profile-dialog__actions">
+        <button type="submit" class="btn btn-ghost" value="cancel">Volver</button>
+        <button type="submit" class="btn btn-danger" value="save" id="cancel-appt-confirm">Confirmar cancelación</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Reasignar citas al eliminar doctor -->
+  <dialog class="profile-dialog" id="reassign-doctor-dialog" aria-labelledby="reassign-doctor-title">
+    <form method="dialog" class="profile-dialog__card profile-dialog__card--wide" id="reassign-doctor-form">
+      <header class="profile-dialog__head">
+        <h2 id="reassign-doctor-title">Reasignar citas</h2>
+        <button type="submit" class="profile-dialog__close" value="cancel" aria-label="Cerrar">×</button>
+      </header>
+      <div class="profile-dialog__body">
+        <p id="reassign-doctor-msg">Este doctor tiene citas activas. Elige a quién se las pasamos antes de eliminarlo.</p>
+        <div id="reassign-doctor-citas" class="reassign-list"></div>
+        <label>Doctor que toma las citas
+          <select id="reassign-doctor-select" required>
+            <option value="">Seleccione un doctor</option>
+          </select>
+        </label>
+        <p class="profile-dialog__hint">Si el horario original está ocupado, se buscará el siguiente espacio libre del doctor elegido.</p>
+      </div>
+      <footer class="profile-dialog__actions">
+        <button type="submit" class="btn btn-ghost" value="cancel">No eliminar</button>
+        <button type="submit" class="btn btn-danger" value="save" id="reassign-doctor-confirm">Eliminar y reasignar</button>
+      </footer>
+    </form>
+  </dialog>
 
   <script src="/static/js/media.js"></script>
   <script src="/static/js/profile-menu.js"></script>

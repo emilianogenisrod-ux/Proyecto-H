@@ -18,7 +18,7 @@ from app.config import settings
 from app.database import SessionLocal, init_db
 from app.routers import appointments, doctors, media, patients, payments, schedules
 from app.seed import seed_if_empty
-from app.users import ROLE_ADMIN, ROLE_DIRECTOR, ROLE_DOCTOR, ROLE_PATIENT, list_demo_accounts
+from app.users import ROLE_ADMIN, ROLE_DIRECTOR, ROLE_DOCTOR, ROLE_PATIENT
 from app.routers.media import MEDIA_ROOT, ensure_media_dirs
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -78,9 +78,10 @@ def _render_error(request: Request, status_code: int, title: str, message: str, 
 
 
 def _login_context(**extra):
+    # Sin listar cuentas ni claves en la UI (privacidad).
     ctx = {
         "title": "Iniciar sesión · Proyecto H",
-        "accounts": list_demo_accounts(),
+        "accounts": [],
         "error": None,
         "email_value": "",
     }

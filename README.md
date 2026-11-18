@@ -25,8 +25,17 @@ Las claves de base de datos, MinIO y acceso no se suben a este repositorio. Se c
 
 - Doctores, pacientes, horarios, citas y pagos
 - Roles: admin, director, doctor, paciente
+- Especialidades fijas: Medicina General, Pediatría, Ginecología, Dermatología
+- Agenda con hora de Ciudad de México (hoy oculta horas pasadas; días futuros muestran todos los turnos)
+- Generación de horarios semanales y reasignación de citas al eliminar un doctor
 - Medios (imágenes, videos, plantillas)
 - Datos de ejemplo si la base está vacía
+
+## Privacidad
+
+- `.env` y secretos **no** se suben al repositorio (usar `.env.example`)
+- Contraseñas solo en el servidor / `.env` local (`USER_PASSWORDS_JSON`)
+- La pantalla de login no muestra correos ni claves
 
 ## Requisitos
 

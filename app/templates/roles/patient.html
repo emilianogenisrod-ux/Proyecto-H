@@ -66,7 +66,16 @@
         <div class="surface"><header class="surface__head"><h2>Nueva cita</h2></header>
           <div class="surface__body">
             <form id="patient-book-form" class="form-grid">
-              <label>Doctor<select id="pat-doctor" required></select></label>
+              <label>Especialidad
+                <select id="pat-specialty" required>
+                  <option value="">Seleccione especialidad</option>
+                  <option value="Medicina General">Medicina General</option>
+                  <option value="Pediatría">Pediatría</option>
+                  <option value="Ginecología">Ginecología</option>
+                  <option value="Dermatología">Dermatología</option>
+                </select>
+              </label>
+              <label>Doctor<select id="pat-doctor" required><option value="">Seleccione especialidad</option></select></label>
               <label>Fecha<input type="date" id="pat-date" required></label>
               <label>Horario<select id="pat-slot" required><option value="">Seleccione doctor y fecha</option></select></label>
               <label>Notas<textarea id="pat-notes" rows="1"></textarea></label>
