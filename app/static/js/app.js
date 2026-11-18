@@ -161,7 +161,6 @@ const PAGE_LOADERS = {
   appointments: () => loadAppointments(),
   payments: () => loadPayments(),
   users: () => loadUsers(),
-  media: () => loadMedia(),
 };
 
 function setPageChrome(panel) {
@@ -1257,12 +1256,6 @@ async function loadUsers() {
   el.innerHTML = `<table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Permisos</th></tr></thead><tbody>
     ${accounts.map((a) => `<tr><td>${a.name}</td><td>${a.email}</td><td><span class="role-pill">${a.role}</span></td><td>${a.access}</td></tr>`).join("")}
   </tbody></table>`;
-}
-
-let _mediaRefresh = null;
-async function loadMedia() {
-  if (!_mediaRefresh) _mediaRefresh = bindMediaPanel();
-  await _mediaRefresh();
 }
 
 // Init

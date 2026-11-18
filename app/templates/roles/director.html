@@ -32,7 +32,6 @@
       <li><button type="button" class="nav-link" data-tab="payments">Cobros</button></li>
       <li><button type="button" class="nav-link" data-tab="staff">Plantilla</button></li>
       <li><button type="button" class="nav-link" data-tab="reports">Indicadores</button></li>
-      <li><button type="button" class="nav-link" data-tab="media">Medios</button></li>
     </ul></nav>
   </div></header>
 
@@ -50,7 +49,6 @@
         <li><button type="button" class="sidebar-link" data-tab="payments">Cobros</button></li>
         <li><button type="button" class="sidebar-link" data-tab="staff">Plantilla</button></li>
         <li><button type="button" class="sidebar-link" data-tab="reports">Indicadores</button></li>
-        <li><button type="button" class="sidebar-link" data-tab="media">Medios</button></li>
       </ul>
       <div class="sidebar__note"><strong>Permisos</strong><p>Consulta global y seguimiento. Sin alta/baja de maestros.</p></div>
     </aside>
@@ -83,34 +81,11 @@
         <div class="surface"><header class="surface__head"><h2>Indicadores del día</h2></header><div class="surface__body" id="director-reports"></div></div>
       </section>
 
-      <section id="panel-media" class="panel" data-title="Biblioteca de medios" data-eyebrow="Archivos" data-lead="Consulte e incorpore imágenes y videos institucionales.">
-        <div class="surface">
-          <header class="surface__head"><h2>Subir archivo</h2></header>
-          <div class="surface__body">
-            <form id="media-upload-form" class="form-grid media-upload-form">
-              <label>Título<input type="text" id="media-title"></label>
-              <label>Tipo<select id="media-kind"><option value="auto">Auto</option><option value="image">Imagen</option><option value="video">Video</option></select></label>
-              <label>Archivo<input type="file" id="media-file" accept="image/*,video/mp4,video/webm,video/quicktime" required></label>
-              <div class="form-actions"><button type="submit" class="btn btn-primary">Subir</button></div>
-            </form>
-          </div>
-        </div>
-        <div class="surface"><header class="surface__head"><h2>Galería</h2></header>
-          <div class="surface__body">
-            <div class="filters">
-              <label>Filtrar<select id="media-filter-kind"><option value="">Todos</option><option value="image">Imágenes</option><option value="video">Videos</option></select></label>
-              <button type="button" class="btn btn-primary" id="media-refresh">Actualizar</button>
-            </div>
-            <div id="media-gallery" class="media-gallery"></div>
-          </div>
-        </div>
-      </section>
     </main>
   </div></div>
 
   <footer class="site-footer"><div class="container site-footer__base"><span>Proyecto H · Vista de dirección</span></div></footer>
   <script src="/static/js/common.js"></script>
-  <script src="/static/js/media.js"></script>
   <script src="/static/js/profile-menu.js"></script>
   <script src="/static/js/director.js"></script>
 </body>

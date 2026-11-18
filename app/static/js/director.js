@@ -4,16 +4,9 @@ const loaders = {
   payments: loadPayments,
   staff: loadStaff,
   reports: loadReports,
-  media: loadMedia,
 };
 
 bindRoleNavigation(loaders);
-
-let _mediaRefresh = null;
-async function loadMedia() {
-  if (!_mediaRefresh) _mediaRefresh = bindMediaPanel();
-  await _mediaRefresh();
-}
 
 async function loadDashboard() {
   try {

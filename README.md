@@ -28,7 +28,6 @@ Las claves de base de datos, MinIO y acceso no se suben a este repositorio. Se c
 - Especialidades fijas: Medicina General, Pediatría, Ginecología, Dermatología
 - Agenda con hora de Ciudad de México (hoy oculta horas pasadas; días futuros muestran todos los turnos)
 - Generación de horarios semanales y reasignación de citas al eliminar un doctor
-- Medios (imágenes, videos, plantillas)
 - Datos de ejemplo si la base está vacía
 
 ## Privacidad
@@ -70,7 +69,6 @@ pytest -v
 ```
 app/                 # FastAPI, modelos, routers, templates
 sql/                 # Esquema de tablas
-media/               # Archivos locales
 specs/               # Spec Kit
 _bmad-output/        # BMAD
 ```

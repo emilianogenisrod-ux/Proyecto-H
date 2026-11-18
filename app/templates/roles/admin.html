@@ -61,7 +61,6 @@
           <li><button type="button" class="nav-link" data-tab="appointments">Citas</button></li>
           <li><button type="button" class="nav-link" data-tab="payments">Pagos</button></li>
           <li><button type="button" class="nav-link" data-tab="users">Usuarios</button></li>
-          <li><button type="button" class="nav-link" data-tab="media">Medios</button></li>
         </ul>
       </nav>
     </div>
@@ -89,7 +88,6 @@
           <li><button type="button" class="sidebar-link" data-tab="appointments">Citas</button></li>
           <li><button type="button" class="sidebar-link" data-tab="payments">Pagos</button></li>
           <li><button type="button" class="sidebar-link" data-tab="users">Usuarios</button></li>
-          <li><button type="button" class="sidebar-link" data-tab="media">Medios</button></li>
         </ul>
         <div class="sidebar__note">
           <strong>Rol administrador</strong>
@@ -343,50 +341,6 @@
           </div>
         </section>
 
-        <!-- Medios -->
-        <section id="panel-media" class="panel" data-title="Biblioteca de medios" data-eyebrow="Archivos" data-lead="Suba y gestione imágenes y videos del hospital.">
-          <div class="surface">
-            <header class="surface__head"><h2>Subir archivo</h2></header>
-            <div class="surface__body">
-              <form id="media-upload-form" class="form-grid media-upload-form">
-                <label>Título<input type="text" id="media-title" placeholder="Ej. Campaña vacunación"></label>
-                <label>Tipo
-                  <select id="media-kind">
-                    <option value="auto">Detectar automáticamente</option>
-                    <option value="image">Imagen</option>
-                    <option value="video">Video</option>
-                  </select>
-                </label>
-                <label class="media-file-label">Archivo
-                  <input type="file" id="media-file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" required>
-                </label>
-                <div class="form-actions">
-                  <button type="submit" class="btn btn-primary">Subir</button>
-                </div>
-              </form>
-              <p class="profile-dialog__hint">Imágenes hasta 5 MB (JPG/PNG/WEBP/GIF). Videos hasta 50 MB (MP4/WEBM/MOV).</p>
-            </div>
-          </div>
-          <div class="surface">
-            <header class="surface__head">
-              <h2>Galería</h2>
-            </header>
-            <div class="surface__body">
-              <div class="filters">
-                <label>Filtrar
-                  <select id="media-filter-kind">
-                    <option value="">Todos</option>
-                    <option value="image">Imágenes</option>
-                    <option value="video">Videos</option>
-                  </select>
-                </label>
-                <button type="button" class="btn btn-primary" id="media-refresh">Actualizar</button>
-              </div>
-              <div id="media-gallery" class="media-gallery"></div>
-            </div>
-          </div>
-        </section>
-
         <!-- Usuarios -->
         <section id="panel-users" class="panel" data-title="Usuarios y roles" data-eyebrow="Accesos" data-lead="Cuentas del sistema y nivel de permiso de cada perfil.">
           <div class="surface">
@@ -522,7 +476,6 @@
     </form>
   </dialog>
 
-  <script src="/static/js/media.js"></script>
   <script src="/static/js/profile-menu.js"></script>
   <script src="/static/js/app.js"></script>
 </body>

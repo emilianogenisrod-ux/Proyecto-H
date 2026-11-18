@@ -1685,68 +1685,6 @@ tbody tr:hover {
   align-items: center;
 }
 
-/* Media library */
-.media-upload-form .media-file-label input[type="file"] {
-  padding: 0.45rem;
-}
-
-.media-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
-}
-
-.media-card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-}
-
-.media-card__preview {
-  aspect-ratio: 16 / 10;
-  background: var(--mist-wash);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-}
-
-.media-card__preview img,
-.media-card__preview video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.media-card__meta {
-  padding: 0.75rem 0.85rem 0.35rem;
-  display: grid;
-  gap: 0.2rem;
-}
-
-.media-card__meta strong {
-  font-size: 0.9rem;
-  color: var(--shadow);
-}
-
-.media-card__meta span {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.media-card__who {
-  word-break: break-all;
-}
-
-.media-card__actions {
-  padding: 0.55rem 0.85rem 0.85rem;
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-
 /* ========== Loading page + overlay ========== */
 .loading-shell,
 .error-shell {
