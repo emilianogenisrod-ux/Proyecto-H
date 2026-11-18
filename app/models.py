@@ -47,6 +47,7 @@ class Doctor(Base):
     tarifa: Mapped[float] = mapped_column("default_fee", Float, default=500.0, nullable=False)
     telefono: Mapped[str | None] = mapped_column("phone", String(30), nullable=True)
     correo: Mapped[str | None] = mapped_column("email", String(120), nullable=True, index=True)
+    sexo: Mapped[str | None] = mapped_column("sex", String(1), nullable=True)  # M / F
     activo: Mapped[bool] = mapped_column("is_active", Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -64,6 +65,7 @@ class Paciente(Base):
     documento: Mapped[str] = mapped_column("document_id", String(50), unique=True, nullable=False, index=True)
     telefono: Mapped[str | None] = mapped_column("phone", String(30), nullable=True)
     correo: Mapped[str | None] = mapped_column("email", String(120), nullable=True)
+    sexo: Mapped[str | None] = mapped_column("sex", String(1), nullable=True)  # M / F
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     citas: Mapped[list["Cita"]] = relationship(back_populates="paciente")

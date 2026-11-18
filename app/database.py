@@ -33,14 +33,22 @@ def init_db():
 
     Base.metadata.create_all(bind=engine)
 
-    # Migración ligera solo en SQLite (columnas legacy)
-    if not settings.DATABASE_URL.startswith("sqlite"):
-        return
-
+    # Migración ligera: columnas nuevas / legacy
     with engine.begin() as conn:
-        cols = {row[1] for row in conn.execute(text('PRAGMA table_info("hospital-doctors")')).fetchall()}
-        if cols:
-            if "email" not in cols:
-                conn.execute(text('ALTER TABLE "hospital-doctors" ADD COLUMN email VARCHAR(120)'))
-            if "phone" not in cols:
-                conn.execute(text('ALTER TABLE "hospital-doctors" ADD COLUMN phone VARCHAR(30)'))
+        dialect = engine.dialect.name
+        if dialect == "sqlite":
+            docs = {row[1] for row in conn.execute(text('PRAGMA table_info("hospital-doctors")')).fetchall()}
+            pats = {row[1] for row in conn.execute(text('PRAGMA table_info("hospital-patients")')).fetchall()}
+            if docs:
+                if "email" not in docs:
+                    conn.execute(text('ALTER TABLE "hospital-doctors" ADD COLUMN email VARCHAR(120)'))
+                if "phone" not in docs:
+                    conn.execute(text('ALTER TABLE "hospital-doctors" ADD COLUMN phone VARCHAR(30)'))
+                if "sex" not in docs:
+                    conn.execute(text('ALTER TABLE "hospital-doctors" ADD COLUMN sex VARCHAR(1)'))
+            if pats and "sex" not in pats:
+                conn.execute(text('ALTER TABLE "hospital-patients" ADD COLUMN sex VARCHAR(1)'))
+        else:
+            # PostgreSQL / otros
+            conn.execute(text('ALTER TABLE "hospital-doctors" ADD COLUMN IF NOT EXISTS sex VARCHAR(1)'))
+            conn.execute(text('ALTER TABLE "hospital-patients" ADD COLUMN IF NOT EXISTS sex VARCHAR(1)'))

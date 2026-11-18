@@ -12,6 +12,7 @@ from app.schemas import (
     CitaReprogramar,
     DashboardStats,
 )
+from app.especialidades import validar_genero_especialidad
 from app.services.availability import bloquear_doctor, fecha_agenda_valida, horario_disponible
 
 router = APIRouter(prefix="/appointments", tags=["Citas"])
@@ -89,6 +90,14 @@ def crear_cita(payload: CitaCreate, db: Session = Depends(get_db)):
     paciente = db.get(Paciente, payload.paciente_id)
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
+
+    aviso_genero = validar_genero_especialidad(
+        doctor.especialidad,
+        sexo_doctor=doctor.sexo,
+        sexo_paciente=paciente.sexo,
+    )
+    if aviso_genero:
+        raise HTTPException(status_code=400, detail=aviso_genero)
 
     aviso = fecha_agenda_valida(payload.inicio)
     if aviso:

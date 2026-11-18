@@ -148,6 +148,12 @@
                     <option value="Dermatología">Dermatología</option>
                   </select>
                 </label>
+                <label>Sexo
+                  <select id="doctor-sexo" required>
+                    <option value="F">Mujer</option>
+                    <option value="M">Hombre</option>
+                  </select>
+                </label>
                 <label>Duración consulta (min)<input type="number" id="doctor-minutes" value="30" min="5" max="240" required></label>
                 <label>Tarifa default ($)<input type="number" id="doctor-fee" value="500" min="0" step="0.01" required></label>
                 <label class="checkbox-label"><input type="checkbox" id="doctor-active" checked> Activo</label>
@@ -179,6 +185,12 @@
                 <input type="hidden" id="patient-id">
                 <label>Nombre completo<input type="text" id="patient-name" required></label>
                 <label>Documento<input type="text" id="patient-document" required></label>
+                <label>Sexo
+                  <select id="patient-sexo" required>
+                    <option value="F">Mujer</option>
+                    <option value="M">Hombre</option>
+                  </select>
+                </label>
                 <label>Teléfono<input type="text" id="patient-phone"></label>
                 <label>Email<input type="email" id="patient-email"></label>
                 <div class="form-actions">
@@ -281,7 +293,7 @@
                 </label>
                 <label>Doctor<select id="appt-doctor" required><option value="">Seleccione especialidad</option></select></label>
                 <label>Paciente<select id="appt-patient" required></select></label>
-                <label>Fecha<input type="date" id="appt-date" required></label>
+                <label>Fecha<input type="date" id="appt-date" required min=""></label>
                 <label>Horario<select id="appt-slot" required><option value="">Seleccione doctor y fecha</option></select></label>
                 <label>Notas<textarea id="appt-notes" rows="1"></textarea></label>
                 <div class="form-actions">

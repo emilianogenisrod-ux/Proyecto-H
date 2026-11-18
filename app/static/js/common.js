@@ -100,7 +100,27 @@ function badge(status) {
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function maxAgendaISO() {
+  const parts = todayISO().split("-").map(Number);
+  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  d.setUTCDate(d.getUTCDate() + 365);
+  return d.toISOString().slice(0, 10);
+}
+
+function bindAgendaDateInput(el) {
+  if (!el) return;
+  el.min = todayISO();
+  el.max = maxAgendaISO();
+  if (el.value && el.value < el.min) el.value = el.min;
+  if (el.value && el.value > el.max) el.value = el.max;
 }
 
 function setPageChrome(panel) {

@@ -39,9 +39,12 @@ function fillPatientDoctors() {
   const specialty = document.getElementById("pat-specialty")?.value || "";
   const sel = document.getElementById("pat-doctor");
   if (!sel) return;
-  const list = _patDoctors.filter(
+  let list = _patDoctors.filter(
     (d) => d.activo && (!specialty || d.especialidad === specialty)
   );
+  if (specialty === "Ginecología") {
+    list = list.filter((d) => d.sexo === "F");
+  }
   if (!specialty) {
     sel.innerHTML = '<option value="">Seleccione especialidad</option>';
     return;
@@ -57,6 +60,7 @@ async function loadBook() {
     _patDoctors = doctors.filter((d) => d.activo);
     fillPatientDoctors();
     const date = document.getElementById("pat-date");
+    bindAgendaDateInput(date);
     if (!date.value) date.value = todayISO();
     await refreshSlots();
   } catch (e) {

@@ -14,6 +14,9 @@ EspecialidadNombre = Literal[
 ]
 
 
+SexoCodigo = Literal["M", "F"]
+
+
 class DoctorBase(BaseModel):
     nombre_completo: str = Field(..., min_length=1, max_length=200)
     especialidad: str = Field(..., min_length=1, max_length=120)
@@ -21,6 +24,7 @@ class DoctorBase(BaseModel):
     tarifa: float = Field(default=500.0, ge=0)
     telefono: str | None = Field(default=None, max_length=30)
     correo: str | None = Field(default=None, max_length=120)
+    sexo: SexoCodigo | None = None
     activo: bool = True
 
 
@@ -38,6 +42,7 @@ class DoctorUpdate(BaseModel):
     tarifa: float | None = Field(default=None, ge=0)
     telefono: str | None = Field(default=None, max_length=30)
     correo: str | None = Field(default=None, max_length=120)
+    sexo: SexoCodigo | None = None
     activo: bool | None = None
 
 
@@ -53,6 +58,7 @@ class PacienteBase(BaseModel):
     documento: str = Field(..., min_length=1, max_length=50)
     telefono: str | None = Field(default=None, max_length=30)
     correo: str | None = Field(default=None, max_length=120)
+    sexo: SexoCodigo | None = None
 
 
 class PacienteCreate(PacienteBase):
@@ -64,6 +70,7 @@ class PacienteUpdate(BaseModel):
     documento: str | None = Field(default=None, min_length=1, max_length=50)
     telefono: str | None = Field(default=None, max_length=30)
     correo: str | None = Field(default=None, max_length=120)
+    sexo: SexoCodigo | None = None
 
 
 class PacienteRead(PacienteBase):

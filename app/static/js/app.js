@@ -106,7 +106,28 @@ function badge(status) {
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  // Fecha de calendario en Ciudad de México (YYYY-MM-DD)
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function maxAgendaISO() {
+  const parts = todayISO().split("-").map(Number);
+  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  d.setUTCDate(d.getUTCDate() + 365);
+  return d.toISOString().slice(0, 10);
+}
+
+function bindAgendaDateInput(el) {
+  if (!el) return;
+  el.min = todayISO();
+  el.max = maxAgendaISO();
+  if (el.value && el.value < el.min) el.value = el.min;
+  if (el.value && el.value > el.max) el.value = el.max;
 }
 
 const PAGE_LOADERS = {
@@ -221,9 +242,9 @@ async function loadDoctors() {
   try {
     const doctors = await api("/doctors");
     document.getElementById("doctors-table").innerHTML = doctors.length
-      ? `<table><thead><tr><th>Nombre</th><th>Especialidad</th><th>Duración</th><th>Tarifa</th><th>Activo</th><th>Acciones</th></tr></thead><tbody>
+      ? `<table><thead><tr><th>Nombre</th><th>Especialidad</th><th>Sexo</th><th>Duración</th><th>Tarifa</th><th>Activo</th><th>Acciones</th></tr></thead><tbody>
         ${doctors.map((d) => `<tr>
-          <td>${d.nombre_completo}</td><td>${d.especialidad}</td><td>${d.minutos_consulta} min</td>
+          <td>${d.nombre_completo}</td><td>${d.especialidad}</td><td>${d.sexo === "F" ? "Mujer" : d.sexo === "M" ? "Hombre" : "—"}</td><td>${d.minutos_consulta} min</td>
           <td>$${d.tarifa.toFixed(2)}</td><td>${d.activo ? "Sí" : "No"}</td>
           <td class="actions">
             <button class="btn btn-sm btn-primary" onclick="editDoctor(${d.id})">Editar</button>
@@ -243,6 +264,7 @@ function resetDoctorForm() {
   document.getElementById("doctor-id").value = "";
   document.getElementById("doctor-minutes").value = 30;
   document.getElementById("doctor-fee").value = 500;
+  document.getElementById("doctor-sexo").value = "F";
   document.getElementById("doctor-active").checked = true;
   const gen = document.getElementById("doctor-gen-schedule");
   if (gen) gen.checked = true;
@@ -258,10 +280,15 @@ document.getElementById("doctor-form").addEventListener("submit", async (e) => {
   const payload = {
     nombre_completo: document.getElementById("doctor-name").value,
     especialidad: document.getElementById("doctor-especialidad").value,
+    sexo: document.getElementById("doctor-sexo").value,
     minutos_consulta: parseInt(document.getElementById("doctor-minutes").value),
     tarifa: parseFloat(document.getElementById("doctor-fee").value),
     activo: document.getElementById("doctor-active").checked,
   };
+  if (payload.especialidad === "Ginecología" && payload.sexo !== "F") {
+    toast("Ginecología solo admite doctoras", "error");
+    return;
+  }
   const genSchedule = document.getElementById("doctor-gen-schedule")?.checked;
   try {
     if (id) {
@@ -298,6 +325,7 @@ window.editDoctor = async (id) => {
   document.getElementById("doctor-id").value = d.id;
   document.getElementById("doctor-name").value = d.nombre_completo;
   document.getElementById("doctor-especialidad").value = d.especialidad;
+  document.getElementById("doctor-sexo").value = d.sexo || "F";
   document.getElementById("doctor-minutes").value = d.minutos_consulta;
   document.getElementById("doctor-fee").value = d.tarifa;
   document.getElementById("doctor-active").checked = d.activo;
@@ -392,13 +420,16 @@ if (reassignForm) {
 }
 
 // Pacientes
+let _patientsCache = [];
+
 async function loadPatients() {
   try {
     const patients = await api("/patients");
+    _patientsCache = patients;
     document.getElementById("patients-table").innerHTML = patients.length
-      ? `<table><thead><tr><th>Nombre</th><th>Documento</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr></thead><tbody>
+      ? `<table><thead><tr><th>Nombre</th><th>Documento</th><th>Sexo</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr></thead><tbody>
         ${patients.map((p) => `<tr>
-          <td>${p.nombre_completo}</td><td>${p.documento}</td><td>${p.telefono || "—"}</td><td>${p.correo || "—"}</td>
+          <td>${p.nombre_completo}</td><td>${p.documento}</td><td>${p.sexo === "F" ? "Mujer" : p.sexo === "M" ? "Hombre" : "—"}</td><td>${p.telefono || "—"}</td><td>${p.correo || "—"}</td>
           <td class="actions">
             <button class="btn btn-sm btn-primary" onclick="editPatient(${p.id})">Editar</button>
             <button class="btn btn-sm btn-danger" onclick="deletePatient(${p.id})">Eliminar</button>
@@ -406,7 +437,7 @@ async function loadPatients() {
         </tr>`).join("")}
       </tbody></table>`
       : '<p class="empty">No hay pacientes registrados</p>';
-    populatePatientSelects(patients);
+    fillAppointmentPatients();
   } catch (e) {
     toast(e.message, "error");
   }
@@ -415,6 +446,7 @@ async function loadPatients() {
 function resetPatientForm() {
   document.getElementById("patient-form").reset();
   document.getElementById("patient-id").value = "";
+  document.getElementById("patient-sexo").value = "F";
   document.getElementById("patient-form-title").textContent = "Nuevo paciente";
   document.getElementById("patient-cancel-edit").style.display = "none";
 }
@@ -425,8 +457,9 @@ document.getElementById("patient-form").addEventListener("submit", async (e) => 
   const payload = {
     nombre_completo: document.getElementById("patient-name").value,
     documento: document.getElementById("patient-document").value,
-    phone: document.getElementById("patient-phone").value || null,
-    email: document.getElementById("patient-email").value || null,
+    sexo: document.getElementById("patient-sexo").value,
+    telefono: document.getElementById("patient-phone").value || null,
+    correo: document.getElementById("patient-email").value || null,
   };
   try {
     if (id) {
@@ -450,6 +483,7 @@ window.editPatient = async (id) => {
   document.getElementById("patient-id").value = p.id;
   document.getElementById("patient-name").value = p.nombre_completo;
   document.getElementById("patient-document").value = p.documento;
+  document.getElementById("patient-sexo").value = p.sexo || "F";
   document.getElementById("patient-phone").value = p.telefono || "";
   document.getElementById("patient-email").value = p.correo || "";
   document.getElementById("patient-form-title").textContent = "Editar paciente";
@@ -510,9 +544,12 @@ function fillAppointmentDoctors() {
   const doctorEl = document.getElementById("appt-doctor");
   if (!doctorEl) return;
   const specialty = specialtyEl ? specialtyEl.value : "";
-  const list = _doctorsCache.filter(
+  let list = _doctorsCache.filter(
     (d) => d.activo && (!specialty || d.especialidad === specialty)
   );
+  if (specialty === "Ginecología") {
+    list = list.filter((d) => d.sexo === "F");
+  }
   if (!specialty) {
     doctorEl.innerHTML = '<option value="">Seleccione especialidad</option>';
     return;
@@ -526,14 +563,34 @@ function fillAppointmentDoctors() {
 
 document.getElementById("appt-specialty")?.addEventListener("change", () => {
   fillAppointmentDoctors();
+  fillAppointmentPatients();
   if (typeof loadAppointmentSlots === "function") loadAppointmentSlots();
 });
 
-function populatePatientSelects(patients) {
-  const el = document.getElementById("appt-patient");
-  if (el) {
-    el.innerHTML = patients.map((p) => `<option value="${p.id}">${p.nombre_completo} (${p.documento})</option>`).join("");
+document.getElementById("doctor-especialidad")?.addEventListener("change", (e) => {
+  if (e.target.value === "Ginecología") {
+    document.getElementById("doctor-sexo").value = "F";
   }
+});
+
+function populatePatientSelects(patients) {
+  _patientsCache = patients || [];
+  fillAppointmentPatients();
+}
+
+function fillAppointmentPatients() {
+  const el = document.getElementById("appt-patient");
+  if (!el) return;
+  const specialty = document.getElementById("appt-specialty")?.value || "";
+  let list = _patientsCache.slice();
+  if (specialty === "Ginecología") {
+    list = list.filter((p) => p.sexo === "F");
+  }
+  el.innerHTML = list.length
+    ? list
+        .map((p) => `<option value="${p.id}">${p.nombre_completo} (${p.documento})</option>`)
+        .join("")
+    : '<option value="">Sin pacientes elegibles</option>';
 }
 
 // Horarios
@@ -732,7 +789,10 @@ async function loadAppointmentSlots() {
 
 document.getElementById("appt-doctor").addEventListener("change", loadAppointmentSlots);
 document.getElementById("appt-date").addEventListener("change", loadAppointmentSlots);
+bindAgendaDateInput(document.getElementById("appt-date"));
 document.getElementById("appt-date").value = todayISO();
+bindAgendaDateInput(document.getElementById("slots-date"));
+bindAgendaDateInput(document.getElementById("reschedule-date"));
 
 document.getElementById("appointment-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -874,7 +934,8 @@ window.rescheduleAppt = async (id) => {
       `${appt.nombre_paciente || "Paciente"} con ${appt.nombre_doctor || "doctor"} · actual: ${fmtDateTime(appt.inicio)}`;
     const dayInput = document.getElementById("reschedule-date");
     dayInput.value = appt.inicio.slice(0, 10);
-    dayInput.min = todayISO();
+    bindAgendaDateInput(dayInput);
+    if (dayInput.value < dayInput.min) dayInput.value = dayInput.min;
     await loadRescheduleSlots();
     dlg.showModal();
   } catch (e) {

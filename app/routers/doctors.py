@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.especialidades import validar_genero_especialidad
 from app.models import BloqueHorario, Cita, Doctor, EstadoCita
 from app.schemas import DoctorCreate, DoctorRead, DoctorUpdate
 from app.services.availability import bloquear_doctor, horario_disponible, primer_espacio_libre
@@ -29,6 +30,9 @@ def obtener_doctor(doctor_id: int, db: Session = Depends(get_db)):
 
 @router.post("", response_model=DoctorRead, status_code=status.HTTP_201_CREATED)
 def crear_doctor(payload: DoctorCreate, db: Session = Depends(get_db)):
+    aviso = validar_genero_especialidad(payload.especialidad, sexo_doctor=payload.sexo)
+    if aviso:
+        raise HTTPException(status_code=400, detail=aviso)
     doctor = Doctor(**payload.model_dump())
     db.add(doctor)
     db.commit()
@@ -43,6 +47,11 @@ def actualizar_doctor(doctor_id: int, payload: DoctorUpdate, db: Session = Depen
         raise HTTPException(status_code=404, detail="Doctor no encontrado")
 
     cambios = payload.model_dump(exclude_unset=True)
+    especialidad = cambios.get("especialidad", doctor.especialidad)
+    sexo = cambios.get("sexo", doctor.sexo)
+    aviso = validar_genero_especialidad(especialidad, sexo_doctor=sexo)
+    if aviso:
+        raise HTTPException(status_code=400, detail=aviso)
     for campo, valor in cambios.items():
         setattr(doctor, campo, valor)
 
