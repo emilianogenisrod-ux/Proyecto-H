@@ -23,12 +23,12 @@ async function loadDashboard() {
     document.getElementById("stat-today").textContent = stats.appointments_today;
     document.getElementById("stat-pending").textContent = stats.payments_pending;
     const appts = await api("/appointments?status=scheduled");
-    const upcoming = appts.slice(0, 8);
+    const upcoming = sortByInicioAsc(appts.filter(esCitaProxima)).slice(0, 8);
     document.getElementById("director-recent").innerHTML = upcoming.length
-      ? `<table><thead><tr><th>Fecha</th><th>Doctor</th><th>Paciente</th><th>Estado</th></tr></thead><tbody>
-        ${upcoming.map((a) => `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_doctor || "—"}</td><td>${a.nombre_paciente || "—"}</td><td>${badge(a.estado)}</td></tr>`).join("")}
+      ? `<table><thead><tr><th>Fecha</th><th>Doctor</th><th>Paciente</th><th>Estado</th><th>Pago</th></tr></thead><tbody>
+        ${upcoming.map((a) => `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_doctor || "—"}</td><td>${a.nombre_paciente || "—"}</td><td>${badge(a.estado)}</td><td>${a.pago ? badge(a.pago.estado) : "—"}</td></tr>`).join("")}
       </tbody></table>`
-      : empty("Sin actividad programada");
+      : empty("Sin citas próximas sin cobrar");
   } catch (e) {
     toast(e.message, "error");
   }

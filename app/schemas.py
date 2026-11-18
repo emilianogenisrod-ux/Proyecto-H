@@ -124,6 +124,13 @@ class CitaCreate(BaseModel):
 
 class CitaReprogramar(BaseModel):
     inicio: datetime
+    doctor_id: int | None = None  # opcional: cambiar de doctor al reagendar
+
+
+class CitaResultado(BaseModel):
+    # Simulación / registro de cómo quedó la cita
+    resultado: Literal["completed", "patient_late", "doctor_absent"]
+    notas: str | None = Field(default=None, max_length=500)
 
 
 class CitaCancelar(BaseModel):
@@ -175,6 +182,7 @@ class CitaRead(BaseModel):
     created_at: datetime
     pago: PagoRead | None = None
     nombre_doctor: str | None = None
+    especialidad_doctor: str | None = None
     nombre_paciente: str | None = None
     documento_paciente: str | None = None
 

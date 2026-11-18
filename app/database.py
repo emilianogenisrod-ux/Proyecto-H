@@ -52,3 +52,13 @@ def init_db():
             # PostgreSQL / otros
             conn.execute(text('ALTER TABLE "hospital-doctors" ADD COLUMN IF NOT EXISTS sex VARCHAR(1)'))
             conn.execute(text('ALTER TABLE "hospital-patients" ADD COLUMN IF NOT EXISTS sex VARCHAR(1)'))
+
+    # Nuevo estado de cita: doctor no llegó (enum Postgres)
+    if engine.dialect.name == "postgresql":
+        with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            conn.execute(
+                text(
+                    "ALTER TYPE hospital_appointment_status "
+                    "ADD VALUE IF NOT EXISTS 'doctor_absent'"
+                )
+            )

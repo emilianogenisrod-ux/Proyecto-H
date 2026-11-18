@@ -21,7 +21,8 @@ class EstadoCita(str, enum.Enum):
     programada = "scheduled"
     completada = "completed"
     cancelada = "cancelled"
-    no_asistio = "no_show"
+    no_asistio = "no_show"  # paciente llegó tarde / no asistió
+    doctor_ausente = "doctor_absent"  # el doctor no llegó
 
 
 class EstadoPago(str, enum.Enum):

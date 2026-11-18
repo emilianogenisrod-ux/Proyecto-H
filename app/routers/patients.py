@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Paciente
+from app.models import Cita, Paciente, Pago
 from app.schemas import PacienteCreate, PacienteRead, PacienteUpdate
 
 router = APIRouter(prefix="/patients", tags=["Pacientes"])
@@ -63,5 +63,17 @@ def borrar_paciente(paciente_id: int, db: Session = Depends(get_db)):
     paciente = db.get(Paciente, paciente_id)
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
-    db.delete(paciente)
+
+    # Primero pagos y citas: si no, SQLAlchemy pone patient_id=NULL y falla el NOT NULL
+    cita_ids = [
+        row[0]
+        for row in db.query(Cita.id).filter(Cita.paciente_id == paciente_id).all()
+    ]
+    if cita_ids:
+        db.query(Pago).filter(Pago.cita_id.in_(cita_ids)).delete(synchronize_session=False)
+        db.query(Cita).filter(Cita.paciente_id == paciente_id).delete(
+            synchronize_session=False
+        )
+
+    db.query(Paciente).filter(Paciente.id == paciente_id).delete(synchronize_session=False)
     db.commit()

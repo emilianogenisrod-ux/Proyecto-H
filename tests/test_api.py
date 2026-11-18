@@ -236,6 +236,70 @@ def test_cancelar_libera_horario(client):
     assert slot in [s["inicio"] for s in libres]
 
 
+def test_resultado_y_reagendar_con_otro_doctor(client):
+    d1 = client.post(
+        "/api/doctors",
+        json={
+            "nombre_completo": "Dra. Uno",
+            "especialidad": "Ginecología",
+            "sexo": "F",
+            "minutos_consulta": 30,
+            "tarifa": 500,
+        },
+    ).json()
+    d2 = client.post(
+        "/api/doctors",
+        json={
+            "nombre_completo": "Dra. Dos",
+            "especialidad": "Ginecología",
+            "sexo": "F",
+            "minutos_consulta": 30,
+            "tarifa": 500,
+        },
+    ).json()
+    lunes = _proximo_dia(0)
+    for doctor_id in (d1["id"], d2["id"]):
+        client.post(
+            "/api/schedules",
+            json={
+                "doctor_id": doctor_id,
+                "dia_semana": 0,
+                "hora_inicio": "09:00:00",
+                "hora_fin": "13:00:00",
+            },
+        )
+    paciente = client.post(
+        "/api/patients",
+        json={"nombre_completo": "Paciente Mujer", "documento": "GIN-T-1", "sexo": "F"},
+    ).json()
+    slot = client.get(
+        f"/api/doctors/{d1['id']}/slots", params={"day": lunes.isoformat()}
+    ).json()[0]["inicio"]
+    cita = client.post(
+        "/api/appointments",
+        json={"doctor_id": d1["id"], "paciente_id": paciente["id"], "inicio": slot},
+    ).json()
+
+    ausente = client.post(
+        f"/api/appointments/{cita['id']}/outcome",
+        json={"resultado": "doctor_absent"},
+    )
+    assert ausente.status_code == 200
+    assert ausente.json()["estado"] == "doctor_absent"
+
+    slot2 = client.get(
+        f"/api/doctors/{d2['id']}/slots", params={"day": lunes.isoformat()}
+    ).json()[0]["inicio"]
+    reagendada = client.post(
+        f"/api/appointments/{cita['id']}/reschedule",
+        json={"inicio": slot2, "doctor_id": d2["id"]},
+    )
+    assert reagendada.status_code == 200
+    body = reagendada.json()
+    assert body["doctor_id"] == d2["id"]
+    assert body["estado"] == "scheduled"
+
+
 def test_generar_horarios_siempre_asigna(client):
     a = client.post(
         "/api/doctors",
@@ -309,7 +373,7 @@ def test_slots_omit_horas_pasadas_solo_hoy(client, monkeypatch):
     assert f"{manana.isoformat()}T09:00:00" in inicios
 
 
-def test_borrar_doctor_pide_reasignar(client):
+def test_borrar_doctor_reparte_entre_varios_misma_especialidad(client):
     saliente = client.post(
         "/api/doctors",
         json={
@@ -319,17 +383,37 @@ def test_borrar_doctor_pide_reasignar(client):
             "tarifa": 500,
         },
     ).json()
-    sustituto = client.post(
+    a = client.post(
         "/api/doctors",
         json={
-            "nombre_completo": "Dr. Queda",
+            "nombre_completo": "Dr. Queda A",
             "especialidad": "Medicina General",
             "minutos_consulta": 30,
             "tarifa": 500,
         },
     ).json()
+    b = client.post(
+        "/api/doctors",
+        json={
+            "nombre_completo": "Dr. Queda B",
+            "especialidad": "Medicina General",
+            "minutos_consulta": 30,
+            "tarifa": 500,
+        },
+    ).json()
+    # Otra especialidad: no debe aparecer como receptor
+    client.post(
+        "/api/doctors",
+        json={
+            "nombre_completo": "Dra. Pediatra",
+            "especialidad": "Pediatría",
+            "minutos_consulta": 30,
+            "tarifa": 500,
+        },
+    )
+
     lunes = _proximo_dia(0)
-    for doctor_id in (saliente["id"], sustituto["id"]):
+    for doctor_id in (saliente["id"], a["id"], b["id"]):
         client.post(
             "/api/schedules",
             json={
@@ -339,35 +423,89 @@ def test_borrar_doctor_pide_reasignar(client):
                 "hora_fin": "13:00:00",
             },
         )
-    slot = client.get(
+
+    slots = client.get(
         f"/api/doctors/{saliente['id']}/slots", params={"day": lunes.isoformat()}
-    ).json()[0]["inicio"]
+    ).json()
+    pacientes = []
+    citas = []
+    for i, slot in enumerate(slots[:2]):
+        p = client.post(
+            "/api/patients",
+            json={"nombre_completo": f"Paciente Reasig {i}", "documento": f"REASIG-{i}"},
+        ).json()
+        pacientes.append(p)
+        citas.append(
+            client.post(
+                "/api/appointments",
+                json={
+                    "doctor_id": saliente["id"],
+                    "paciente_id": p["id"],
+                    "inicio": slot["inicio"],
+                },
+            ).json()
+        )
+
+    sin_nuevo = client.delete(f"/api/doctors/{saliente['id']}")
+    assert sin_nuevo.status_code == 409
+    detalle = sin_nuevo.json()["detail"]
+    ids_ofrecidos = {d["id"] for d in detalle["doctores"]}
+    assert ids_ofrecidos == {a["id"], b["id"]}
+    assert detalle["especialidad"] == "Medicina General"
+
+    ok = client.delete(
+        f"/api/doctors/{saliente['id']}",
+        params={
+            "redistribuir": "true",
+            "doctor_ids": f"{a['id']},{b['id']}",
+        },
+    )
+    assert ok.status_code == 204
+
+    destinos = {
+        client.get(f"/api/appointments/{c['id']}").json()["doctor_id"] for c in citas
+    }
+    assert destinos == {a["id"], b["id"]}
+    assert client.get(f"/api/doctors/{saliente['id']}").status_code == 404
+
+
+def test_borrar_paciente_con_citas(client):
+    doctor = client.post(
+        "/api/doctors",
+        json={
+            "nombre_completo": "Dr. Para Borrar Paciente",
+            "especialidad": "Medicina General",
+            "minutos_consulta": 30,
+            "tarifa": 400,
+        },
+    ).json()
+    lunes = _proximo_dia(0)
+    client.post(
+        "/api/schedules",
+        json={
+            "doctor_id": doctor["id"],
+            "dia_semana": 0,
+            "hora_inicio": "09:00:00",
+            "hora_fin": "12:00:00",
+        },
+    )
     paciente = client.post(
         "/api/patients",
-        json={"nombre_completo": "Paciente Reasig", "documento": "REASIG-001"},
+        json={"nombre_completo": "Paciente Borrar", "documento": "DEL-PAT-1"},
     ).json()
+    slot = client.get(
+        f"/api/doctors/{doctor['id']}/slots", params={"day": lunes.isoformat()}
+    ).json()[0]["inicio"]
     cita = client.post(
         "/api/appointments",
         json={
-            "doctor_id": saliente["id"],
+            "doctor_id": doctor["id"],
             "paciente_id": paciente["id"],
             "inicio": slot,
         },
     ).json()
 
-    sin_nuevo = client.delete(f"/api/doctors/{saliente['id']}")
-    assert sin_nuevo.status_code == 409
-    detalle = sin_nuevo.json()["detail"]
-    assert "doctores" in detalle
-    assert any(d["id"] == sustituto["id"] for d in detalle["doctores"])
-
-    ok = client.delete(
-        f"/api/doctors/{saliente['id']}",
-        params={"nuevo_doctor_id": sustituto["id"]},
-    )
+    ok = client.delete(f"/api/patients/{paciente['id']}")
     assert ok.status_code == 204
-
-    movida = client.get(f"/api/appointments/{cita['id']}")
-    assert movida.status_code == 200
-    assert movida.json()["doctor_id"] == sustituto["id"]
-    assert client.get(f"/api/doctors/{saliente['id']}").status_code == 404
+    assert client.get(f"/api/patients/{paciente['id']}").status_code == 404
+    assert client.get(f"/api/appointments/{cita['id']}").status_code == 404

@@ -202,7 +202,23 @@
           </div>
           <div class="surface">
             <header class="surface__head"><h2>Listado</h2></header>
-            <div class="surface__body" id="patients-table"></div>
+            <div class="surface__body">
+              <div class="filters patients-toolbar">
+                <label class="patients-search">Buscar paciente
+                  <input type="search" id="patient-search" placeholder="Nombre, documento, teléfono o correo" autocomplete="off">
+                </label>
+                <label>Orden
+                  <select id="patient-sort">
+                    <option value="az">A → Z (alfabético)</option>
+                    <option value="za">Z → A</option>
+                    <option value="doc">Por documento</option>
+                  </select>
+                </label>
+                <button type="button" class="btn btn-primary" id="patient-refresh-btn">Redesplegar</button>
+              </div>
+              <p class="filters-hint" id="patients-result-hint" hidden></p>
+              <div id="patients-table"></div>
+            </div>
           </div>
         </section>
 
@@ -303,21 +319,27 @@
             </div>
           </div>
           <div class="surface">
-            <header class="surface__head"><h2>Listado de citas</h2></header>
+            <header class="surface__head"><h2>Próximas citas</h2></header>
             <div class="surface__body">
               <div class="filters">
                 <label>Doctor<select id="appt-filter-doctor"><option value="">Todos</option></select></label>
                 <label>Estado<select id="appt-filter-status">
                   <option value="">Todos</option>
                   <option value="scheduled">Programada</option>
-                  <option value="completed">Completada</option>
+                  <option value="completed">Realizada</option>
                   <option value="cancelled">Cancelada</option>
-                  <option value="no_show">No asistió</option>
+                  <option value="no_show">Paciente tarde</option>
+                  <option value="doctor_absent">Doctor ausente</option>
                 </select></label>
                 <button class="btn btn-primary" id="appt-filter-btn" type="button">Filtrar</button>
               </div>
-              <div id="appointments-table"></div>
+              <p class="filters-hint">Las citas ya pagadas salen de aquí y pasan al historial.</p>
+              <div id="appointments-upcoming"></div>
             </div>
+          </div>
+          <div class="surface">
+            <header class="surface__head"><h2>Historial</h2></header>
+            <div class="surface__body" id="appointments-history"></div>
           </div>
         </section>
 
@@ -437,6 +459,9 @@
       </header>
       <div class="profile-dialog__body">
         <p class="profile-dialog__hint" id="reschedule-summary">—</p>
+        <label id="reschedule-doctor-wrap" hidden>Doctor
+          <select id="reschedule-doctor"></select>
+        </label>
         <label>Nueva fecha
           <input type="date" id="reschedule-date" required>
         </label>
@@ -482,18 +507,17 @@
         <button type="submit" class="profile-dialog__close" value="cancel" aria-label="Cerrar">×</button>
       </header>
       <div class="profile-dialog__body">
-        <p id="reassign-doctor-msg">Este doctor tiene citas activas. Elige a quién se las pasamos antes de eliminarlo.</p>
+        <p id="reassign-doctor-msg">Este doctor tiene citas activas. Se repartirán entre varios doctores de la misma especialidad.</p>
         <div id="reassign-doctor-citas" class="reassign-list"></div>
-        <label>Doctor que toma las citas
-          <select id="reassign-doctor-select" required>
-            <option value="">Seleccione un doctor</option>
-          </select>
-        </label>
-        <p class="profile-dialog__hint">Si el horario original está ocupado, se buscará el siguiente espacio libre del doctor elegido.</p>
+        <fieldset class="reassign-doctors-fieldset">
+          <legend>Doctores que reciben las citas</legend>
+          <div id="reassign-doctor-checks" class="reassign-checks"></div>
+        </fieldset>
+        <p class="profile-dialog__hint">Marca al menos dos cuando haya varios. Las citas se reparten en turnos entre los seleccionados (misma especialidad). Si un horario choca, se busca el siguiente hueco libre.</p>
       </div>
       <footer class="profile-dialog__actions">
         <button type="submit" class="btn btn-ghost" value="cancel">No eliminar</button>
-        <button type="submit" class="btn btn-danger" value="save" id="reassign-doctor-confirm">Eliminar y reasignar</button>
+        <button type="submit" class="btn btn-danger" value="save" id="reassign-doctor-confirm">Eliminar y repartir</button>
       </footer>
     </form>
   </dialog>

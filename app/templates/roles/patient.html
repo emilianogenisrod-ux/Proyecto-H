@@ -85,8 +85,9 @@
         </div>
       </section>
 
-      <section id="panel-appointments" class="panel" data-title="Mis citas" data-eyebrow="Historial" data-lead="Citas asociadas a su expediente.">
-        <div class="surface"><header class="surface__head"><h2>Historial de citas</h2></header><div class="surface__body" id="patient-appointments"></div></div>
+      <section id="panel-appointments" class="panel" data-title="Mis citas" data-eyebrow="Agenda" data-lead="Próximas consultas y historial de citas ya cobradas o cerradas.">
+        <div class="surface"><header class="surface__head"><h2>Próximas citas</h2></header><div class="surface__body" id="patient-appointments-upcoming"></div></div>
+        <div class="surface"><header class="surface__head"><h2>Historial</h2></header><div class="surface__body" id="patient-appointments-history"></div></div>
       </section>
 
       <section id="panel-payments" class="panel" data-title="Mis pagos" data-eyebrow="Cobros" data-lead="Estados de pago de sus consultas.">
@@ -98,6 +99,34 @@
       </section>
     </main>
   </div></div>
+
+  <!-- Reagendar cita (tarde / doctor ausente) -->
+  <dialog class="profile-dialog" id="pat-reschedule-dialog" aria-labelledby="pat-reschedule-title">
+    <form method="dialog" class="profile-dialog__card profile-dialog__card--wide" id="pat-reschedule-form">
+      <header class="profile-dialog__head">
+        <h2 id="pat-reschedule-title">Reagendar cita</h2>
+        <button type="submit" class="profile-dialog__close" value="cancel" aria-label="Cerrar">×</button>
+      </header>
+      <div class="profile-dialog__body">
+        <p class="profile-dialog__hint" id="pat-reschedule-summary">—</p>
+        <label id="pat-reschedule-doctor-wrap">Doctor
+          <select id="pat-reschedule-doctor" required></select>
+        </label>
+        <label>Nueva fecha
+          <input type="date" id="pat-reschedule-date" required>
+        </label>
+        <label>Horario
+          <select id="pat-reschedule-slot" required>
+            <option value="">Seleccione fecha</option>
+          </select>
+        </label>
+      </div>
+      <footer class="profile-dialog__actions">
+        <button type="submit" class="btn btn-ghost" value="cancel">Cancelar</button>
+        <button type="submit" class="btn btn-primary" value="save">Confirmar nueva cita</button>
+      </footer>
+    </form>
+  </dialog>
 
   <footer class="site-footer"><div class="container site-footer__base"><span>Proyecto H · Portal del paciente</span></div></footer>
   <script src="/static/js/common.js"></script>

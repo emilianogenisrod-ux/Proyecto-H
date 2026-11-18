@@ -512,6 +512,21 @@ textarea:focus {
   align-items: end;
 }
 
+.patients-toolbar .patients-search {
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.patients-toolbar .patients-search input {
+  width: 100%;
+}
+
+.filters-hint {
+  margin: -0.35rem 0 0.85rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
 /* Horarios — creación amigable */
 .schedule-doctor-bar {
   margin-bottom: 0.35rem;
@@ -791,6 +806,7 @@ tbody tr:hover {
 .badge-completed { background: #d9ebe2; color: var(--success); }
 .badge-cancelled { background: color-mix(in srgb, var(--autumn) 18%, white); color: var(--autumn); }
 .badge-no_show { background: #f0e6d8; color: var(--warning); }
+.badge-doctor_absent { background: color-mix(in srgb, var(--brand) 14%, white); color: var(--brand-deep); }
 
 .badge-pending { background: #f0e6d8; color: var(--warning); }
 .badge-paid { background: #d9ebe2; color: var(--success); }
@@ -1556,6 +1572,39 @@ tbody tr:hover {
   padding-left: 1.1rem;
   display: grid;
   gap: 0.25rem;
+}
+
+.reassign-doctors-fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.8rem 0.8rem;
+  margin: 0.75rem 0 0;
+}
+
+.reassign-doctors-fieldset legend {
+  padding: 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--shadow);
+}
+
+.reassign-checks {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.reassign-check {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.reassign-check input {
+  width: 1rem;
+  height: 1rem;
 }
 
 .profile-dialog__head {

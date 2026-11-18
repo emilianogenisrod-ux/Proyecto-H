@@ -3,9 +3,10 @@ const API = "/api";
 
 const STATUS_LABELS = {
   scheduled: "Programada",
-  completed: "Completada",
+  completed: "Realizada",
   cancelled: "Cancelada",
-  no_show: "No asistió",
+  no_show: "Paciente tarde",
+  doctor_absent: "Doctor ausente",
   pending: "Pendiente",
   paid: "Pagado",
   partial: "Parcial",
@@ -14,6 +15,30 @@ const STATUS_LABELS = {
 };
 
 const WEEKDAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+/** Cita cobrada: sale de «próximas» y pasa a historial. */
+function esCitaPagada(a) {
+  return !!(a && a.pago && a.pago.estado === "paid");
+}
+
+/** Próxima: programada, aún no pagada y con horario vigente. */
+function esCitaProxima(a) {
+  if (!a || a.estado !== "scheduled") return false;
+  if (esCitaPagada(a)) return false;
+  return new Date(a.inicio) >= new Date();
+}
+
+function esCitaHistorial(a) {
+  return !esCitaProxima(a);
+}
+
+function sortByInicioAsc(list) {
+  return [...list].sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
+}
+
+function sortByInicioDesc(list) {
+  return [...list].sort((a, b) => new Date(b.inicio) - new Date(a.inicio));
+}
 
 let _loaderTimer = null;
 let _loaderCount = 0;

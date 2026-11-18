@@ -18,22 +18,28 @@ async function loadDashboard() {
   }
   try {
     const appts = await api(`/appointments?paciente_id=${PATIENT_ID}`);
-    const scheduled = appts.filter((a) => a.estado === "scheduled");
-    const pendingPay = scheduled.filter((a) => a.pago && a.pago.estado === "pending").length;
-    document.getElementById("pat-stat-appts").textContent = scheduled.length;
+    const upcoming = sortByInicioAsc(appts.filter(esCitaProxima));
+    const pendingPay = upcoming.filter((a) => a.pago && a.pago.estado === "pending").length;
+    document.getElementById("pat-stat-appts").textContent = upcoming.length;
     document.getElementById("pat-stat-pending").textContent = pendingPay;
-    const upcoming = scheduled.filter((a) => new Date(a.inicio) >= new Date()).slice(0, 8);
     document.getElementById("patient-upcoming").innerHTML = upcoming.length
       ? `<table><thead><tr><th>Fecha</th><th>Doctor</th><th>Estado</th><th>Pago</th></tr></thead><tbody>
-        ${upcoming.map((a) => `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_doctor || "—"}</td><td>${badge(a.estado)}</td><td>${a.pago ? badge(a.pago.status) : "—"}</td></tr>`).join("")}
+        ${upcoming
+          .slice(0, 8)
+          .map(
+            (a) =>
+              `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_doctor || "—"}</td><td>${badge(a.estado)}</td><td>${a.pago ? badge(a.pago.estado) : "—"}</td></tr>`
+          )
+          .join("")}
       </tbody></table>`
-      : empty("No tiene citas próximas. Use Agendar para reservar.");
+      : empty("No tiene citas próximas sin cobrar. Use Agendar para reservar.");
   } catch (e) {
     toast(e.message, "error");
   }
 }
 
 let _patDoctors = [];
+let _pendingPatReschedule = null;
 
 function fillPatientDoctors() {
   const specialty = document.getElementById("pat-specialty")?.value || "";
@@ -116,19 +122,176 @@ document.getElementById("patient-book-form")?.addEventListener("submit", async (
   }
 });
 
+function appointmentActions(a) {
+  if (esCitaPagada(a)) return "<small>Pagada</small>";
+  if (a.estado === "scheduled") {
+    return `
+      <button class="btn btn-sm btn-primary" type="button" onclick="patMarkOutcome(${a.id}, 'completed')">Sí se hizo</button>
+      <button class="btn btn-sm btn-ghost" type="button" onclick="patMarkOutcome(${a.id}, 'patient_late')">Llegué tarde</button>
+      <button class="btn btn-sm btn-ghost" type="button" onclick="patMarkOutcome(${a.id}, 'doctor_absent')">Doctor no llegó</button>
+    `;
+  }
+  if (a.estado === "no_show") {
+    return `<button class="btn btn-sm btn-primary" type="button" onclick="patOpenReschedule(${a.id})">Reagendar cita</button>`;
+  }
+  if (a.estado === "doctor_absent") {
+    return `<button class="btn btn-sm btn-primary" type="button" onclick="patOpenReschedule(${a.id})">Reagendar con otro doctor</button>`;
+  }
+  return "—";
+}
+
+function renderPatientApptTable(list, emptyMsg) {
+  if (!list.length) return empty(emptyMsg);
+  return `<table><thead><tr><th>Fecha</th><th>Doctor</th><th>Estado</th><th>Pago</th><th>Notas</th><th>Acciones</th></tr></thead><tbody>
+    ${list
+      .map(
+        (a) => `<tr>
+      <td>${fmtDateTime(a.inicio)}</td>
+      <td>${a.nombre_doctor || "—"}</td>
+      <td>${badge(a.estado)}</td>
+      <td>${a.pago ? badge(a.pago.estado) : "—"}</td>
+      <td>${a.notas || "—"}</td>
+      <td class="actions">${appointmentActions(a)}</td>
+    </tr>`
+      )
+      .join("")}
+  </tbody></table>`;
+}
+
 async function loadAppointments() {
   if (!PATIENT_ID) return;
   try {
+    if (!_patDoctors.length) {
+      const doctors = await api("/doctors", { silent: true });
+      _patDoctors = doctors.filter((d) => d.activo);
+    }
     const appts = await api(`/appointments?paciente_id=${PATIENT_ID}`);
-    document.getElementById("patient-appointments").innerHTML = appts.length
-      ? `<table><thead><tr><th>Fecha</th><th>Doctor</th><th>Estado</th><th>Notas</th></tr></thead><tbody>
-        ${appts.map((a) => `<tr><td>${fmtDateTime(a.inicio)}</td><td>${a.nombre_doctor || "—"}</td><td>${badge(a.estado)}</td><td>${a.notes || "—"}</td></tr>`).join("")}
-      </tbody></table>`
-      : empty("Aún no tiene citas");
+    const upcoming = sortByInicioAsc(appts.filter(esCitaProxima));
+    const history = sortByInicioDesc(appts.filter(esCitaHistorial));
+    const up = document.getElementById("patient-appointments-upcoming");
+    const hist = document.getElementById("patient-appointments-history");
+    if (up) up.innerHTML = renderPatientApptTable(upcoming, "No tiene citas próximas sin cobrar");
+    if (hist) hist.innerHTML = renderPatientApptTable(history, "Sin historial aún");
   } catch (e) {
     toast(e.message, "error");
   }
 }
+
+window.patMarkOutcome = async (id, resultado) => {
+  const msgs = {
+    completed: "¿Confirmas que la consulta sí se realizó?",
+    patient_late: "¿Confirmas que llegaste tarde y quieres poder reagendar?",
+    doctor_absent: "¿Confirmas que el doctor no llegó?",
+  };
+  if (!confirm(msgs[resultado] || "¿Confirmar?")) return;
+  try {
+    await api(`/appointments/${id}/outcome`, {
+      method: "POST",
+      body: JSON.stringify({ resultado }),
+    });
+    toast("Estado de la cita actualizado");
+    loadAppointments();
+    loadDashboard();
+  } catch (e) {
+    toast(e.message, "error");
+  }
+};
+
+async function loadPatRescheduleSlots() {
+  const doctorId = document.getElementById("pat-reschedule-doctor").value;
+  const day = document.getElementById("pat-reschedule-date").value;
+  const slotSel = document.getElementById("pat-reschedule-slot");
+  if (!doctorId || !day || !_pendingPatReschedule) {
+    slotSel.innerHTML = '<option value="">Seleccione doctor y fecha</option>';
+    return;
+  }
+  try {
+    const slots = await api(
+      `/doctors/${doctorId}/slots?day=${day}&excluir_cita_id=${_pendingPatReschedule.id}`,
+      { silent: true }
+    );
+    slotSel.innerHTML = slots.length
+      ? slots
+          .map((s) => `<option value="${s.inicio}">${fmtTime(s.inicio)} – ${fmtTime(s.fin)}</option>`)
+          .join("")
+      : '<option value="">Sin horarios libres</option>';
+  } catch (e) {
+    slotSel.innerHTML = '<option value="">Error al cargar</option>';
+  }
+}
+
+window.patOpenReschedule = async (id) => {
+  const dlg = document.getElementById("pat-reschedule-dialog");
+  if (!dlg) return;
+  try {
+    const appt = await api(`/appointments/${id}`);
+    _pendingPatReschedule = appt;
+    const especialidad = appt.especialidad_doctor;
+    const doctorSel = document.getElementById("pat-reschedule-doctor");
+    const wrap = document.getElementById("pat-reschedule-doctor-wrap");
+    const dateInput = document.getElementById("pat-reschedule-date");
+
+    if (appt.estado === "doctor_absent") {
+      document.getElementById("pat-reschedule-summary").textContent =
+        `Doctor ausente: ${appt.nombre_doctor}. Elige otro de ${especialidad || "la misma especialidad"}.`;
+      wrap.style.display = "";
+      let list = _patDoctors.filter(
+        (d) => d.activo && d.id !== appt.doctor_id && (!especialidad || d.especialidad === especialidad)
+      );
+      if (especialidad === "Ginecología") list = list.filter((d) => d.sexo === "F");
+      doctorSel.innerHTML = list.length
+        ? list.map((d) => `<option value="${d.id}">${d.nombre_completo}</option>`).join("")
+        : '<option value="">No hay otro doctor disponible</option>';
+      doctorSel.required = true;
+    } else {
+      document.getElementById("pat-reschedule-summary").textContent =
+        `Llegaste tarde a la cita con ${appt.nombre_doctor}. Elige un nuevo horario.`;
+      wrap.style.display = "none";
+      doctorSel.innerHTML = `<option value="${appt.doctor_id}">${appt.nombre_doctor}</option>`;
+      doctorSel.required = false;
+    }
+
+    bindAgendaDateInput(dateInput);
+    dateInput.value = todayISO();
+    await loadPatRescheduleSlots();
+    dlg.showModal();
+  } catch (e) {
+    toast(e.message, "error");
+  }
+};
+
+document.getElementById("pat-reschedule-doctor")?.addEventListener("change", loadPatRescheduleSlots);
+document.getElementById("pat-reschedule-date")?.addEventListener("change", loadPatRescheduleSlots);
+
+document.getElementById("pat-reschedule-form")?.addEventListener("submit", async (ev) => {
+  const submitter = ev.submitter;
+  if (!submitter || submitter.value !== "save") {
+    _pendingPatReschedule = null;
+    return;
+  }
+  ev.preventDefault();
+  if (!_pendingPatReschedule) return;
+  const inicio = document.getElementById("pat-reschedule-slot").value;
+  const doctorId = Number(document.getElementById("pat-reschedule-doctor").value);
+  if (!inicio || !doctorId) return toast("Elige doctor y horario", "error");
+  const body = { inicio };
+  if (_pendingPatReschedule.estado === "doctor_absent") {
+    body.doctor_id = doctorId;
+  }
+  try {
+    await api(`/appointments/${_pendingPatReschedule.id}/reschedule`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    document.getElementById("pat-reschedule-dialog").close();
+    _pendingPatReschedule = null;
+    toast("Cita reagendada");
+    loadAppointments();
+    loadDashboard();
+  } catch (e) {
+    toast(e.message, "error");
+  }
+});
 
 async function loadPayments() {
   if (!PATIENT_ID) return;
@@ -156,6 +319,7 @@ async function loadProfile() {
       <dl class="profile-grid">
         <div><dt>Nombre</dt><dd>${p.nombre_completo}</dd></div>
         <div><dt>Documento</dt><dd>${p.documento}</dd></div>
+        <div><dt>Sexo</dt><dd>${p.sexo === "F" ? "Mujer" : p.sexo === "M" ? "Hombre" : "—"}</dd></div>
         <div><dt>Teléfono</dt><dd>${p.telefono || "—"}</dd></div>
         <div><dt>Email</dt><dd>${p.correo || "—"}</dd></div>
         <div><dt>Rol</dt><dd>${USER.role_label || "Paciente"}</dd></div>

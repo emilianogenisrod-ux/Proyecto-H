@@ -8,11 +8,9 @@ from app.models import BloqueHorario, Cita, Doctor, EstadoCita
 # Hora oficial de la agenda (Ciudad de México)
 TZ_MEXICO = ZoneInfo("America/Mexico_City")
 
-# Estados que todavía ocupan el horario del doctor
+# Solo las citas aún programadas ocupan el horario
 ESTADOS_ACTIVOS = {
     EstadoCita.programada,
-    EstadoCita.completada,
-    EstadoCita.no_asistio,
 }
 
 
