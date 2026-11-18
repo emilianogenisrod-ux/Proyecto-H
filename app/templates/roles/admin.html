@@ -221,24 +221,48 @@
         </section>
 
         <!-- Horarios -->
-        <section id="panel-schedules" class="panel" data-title="Horarios" data-eyebrow="Disponibilidad" data-lead="Define la semana laboral del doctor con turnos claros de mañana y tarde.">
+        <section id="panel-schedules" class="panel" data-title="Horarios" data-eyebrow="Disponibilidad" data-lead="Busca por nombre o especialidad y abre la agenda de cada doctor por separado.">
           <div class="surface">
-            <header class="surface__head"><h2>Doctor y semana</h2></header>
+            <header class="surface__head"><h2>Directorio de horarios</h2></header>
             <div class="surface__body">
-              <div class="filters schedule-doctor-bar">
-                <label>Doctor
-                  <select id="schedule-doctor" required></select>
+              <div class="filters patients-toolbar">
+                <label class="patients-search">Buscar por nombre
+                  <input type="search" id="schedule-search" placeholder="Ej. Vargas, Nora…" autocomplete="off">
                 </label>
-                <input type="hidden" id="schedule-filter-doctor">
-                <button type="button" class="btn btn-ghost" id="schedule-generate-btn">Generar semana al azar</button>
+                <label>Especialidad
+                  <select id="schedule-specialty-filter">
+                    <option value="">Todas</option>
+                    <option value="Medicina General">Medicina General</option>
+                    <option value="Pediatría">Pediatría</option>
+                    <option value="Ginecología">Ginecología</option>
+                    <option value="Dermatología">Dermatología</option>
+                  </select>
+                </label>
+                <button type="button" class="btn btn-primary" id="schedule-refresh-btn">Redesplegar</button>
               </div>
-              <p class="profile-dialog__hint" id="schedule-doctor-meta">Elige un doctor para ver y editar su agenda.</p>
+              <p class="filters-hint" id="schedule-dir-hint">Elige un doctor para ver su semana.</p>
+              <div id="schedule-doctor-directory"></div>
             </div>
           </div>
 
-          <div class="surface">
-            <header class="surface__head"><h2>Agregar turno</h2></header>
+          <div class="surface" id="schedule-editor" hidden>
+            <header class="surface__head">
+              <h2 id="schedule-editor-title">Agenda del doctor</h2>
+            </header>
             <div class="surface__body">
+              <input type="hidden" id="schedule-doctor">
+              <input type="hidden" id="schedule-filter-doctor">
+              <dl class="schedule-doctor-card" id="schedule-doctor-meta-card">
+                <div><dt>Nombre</dt><dd id="sched-meta-name">—</dd></div>
+                <div><dt>Especialidad</dt><dd id="sched-meta-specialty">—</dd></div>
+                <div><dt>Sexo</dt><dd id="sched-meta-sex">—</dd></div>
+                <div><dt>Consulta</dt><dd id="sched-meta-minutes">—</dd></div>
+              </dl>
+              <div class="form-actions" style="margin: 0.75rem 0 1rem;">
+                <button type="button" class="btn btn-ghost" id="schedule-generate-btn">Generar semana al azar</button>
+              </div>
+
+              <h3 class="schedule-subtitle">Agregar turno</h3>
               <form id="schedule-form" class="schedule-create">
                 <fieldset class="schedule-days">
                   <legend>Días</legend>
@@ -265,21 +289,26 @@
                     <button type="submit" class="btn btn-primary">Agregar a los días marcados</button>
                   </div>
                 </div>
-                <p class="profile-dialog__hint">Marca varios días, elige un turno sugerido o ajusta la hora, y se agrega de una vez.</p>
               </form>
+
+              <h3 class="schedule-subtitle">Agenda semanal</h3>
+              <div id="schedules-table" class="schedule-week"></div>
             </div>
           </div>
 
           <div class="surface">
-            <header class="surface__head"><h2>Agenda semanal</h2></header>
-            <div class="surface__body">
-              <div id="schedules-table" class="schedule-week"></div>
-            </div>
-          </div>
-          <div class="surface">
             <header class="surface__head"><h2>Consultar slots disponibles</h2></header>
             <div class="surface__body">
               <div class="filters">
+                <label>Especialidad
+                  <select id="slots-specialty">
+                    <option value="">Todas</option>
+                    <option value="Medicina General">Medicina General</option>
+                    <option value="Pediatría">Pediatría</option>
+                    <option value="Ginecología">Ginecología</option>
+                    <option value="Dermatología">Dermatología</option>
+                  </select>
+                </label>
                 <label>Doctor<select id="slots-doctor"></select></label>
                 <label>Fecha<input type="date" id="slots-date"></label>
                 <button class="btn btn-primary" id="slots-search" type="button">Buscar slots</button>

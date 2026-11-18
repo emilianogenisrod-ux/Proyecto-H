@@ -627,30 +627,54 @@ function populateDoctorSelects(doctors) {
         .join("")
     );
   };
-  ["schedule-doctor", "slots-doctor"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = opts(doctors, false);
-  });
+  fillSlotsDoctorSelect();
   ["appt-filter-doctor", "pay-filter-doctor"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = opts(doctors, true);
   });
-  const hiddenFilter = document.getElementById("schedule-filter-doctor");
-  if (hiddenFilter && doctors.length) {
-    hiddenFilter.value = document.getElementById("schedule-doctor")?.value || String(doctors[0].id);
-  }
-  updateScheduleDoctorMeta();
   fillAppointmentDoctors();
 }
 
+function fillSlotsDoctorSelect() {
+  const specialty = document.getElementById("slots-specialty")?.value || "";
+  const el = document.getElementById("slots-doctor");
+  if (!el) return;
+  let list = _doctorsCache.filter((d) => d.activo && (!specialty || d.especialidad === specialty));
+  list = list.sort((a, b) =>
+    _normText(a.nombre_completo).localeCompare(_normText(b.nombre_completo), "es")
+  );
+  el.innerHTML = list.length
+    ? list
+        .map(
+          (d) =>
+            `<option value="${d.id}">${d.nombre_completo} — ${d.especialidad}</option>`
+        )
+        .join("")
+    : '<option value="">Sin doctores</option>';
+}
+
 function updateScheduleDoctorMeta() {
-  const meta = document.getElementById("schedule-doctor-meta");
-  const sel = document.getElementById("schedule-doctor");
-  if (!meta || !sel) return;
-  const doc = _doctorsCache.find((d) => String(d.id) === String(sel.value));
-  meta.textContent = doc
-    ? `${doc.nombre_completo} · ${doc.especialidad} · consulta de ${doc.minutos_consulta} min`
-    : "Elige un doctor para ver y editar su agenda.";
+  const doctorId = document.getElementById("schedule-doctor")?.value;
+  const doc = _doctorsCache.find((d) => String(d.id) === String(doctorId));
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+  if (!doc) {
+    set("sched-meta-name", "—");
+    set("sched-meta-specialty", "—");
+    set("sched-meta-sex", "—");
+    set("sched-meta-minutes", "—");
+    const title = document.getElementById("schedule-editor-title");
+    if (title) title.textContent = "Agenda del doctor";
+    return;
+  }
+  set("sched-meta-name", doc.nombre_completo);
+  set("sched-meta-specialty", doc.especialidad);
+  set("sched-meta-sex", doc.sexo === "F" ? "Mujer" : doc.sexo === "M" ? "Hombre" : "—");
+  set("sched-meta-minutes", `${doc.minutos_consulta} min`);
+  const title = document.getElementById("schedule-editor-title");
+  if (title) title.textContent = `Agenda · ${doc.nombre_completo}`;
 }
 
 function fillAppointmentDoctors() {
@@ -711,6 +735,9 @@ function fillAppointmentPatients() {
 }
 
 // Horarios
+let _scheduleBlocksCache = {};
+let _selectedScheduleDoctorId = null;
+
 function selectedScheduleDays() {
   return Array.from(document.querySelectorAll('input[name="schedule-day"]:checked')).map((el) =>
     Number(el.value)
@@ -724,14 +751,116 @@ function syncScheduleDoctorHidden() {
   updateScheduleDoctorMeta();
 }
 
+function summarizeBlocks(blocks) {
+  if (!blocks || !blocks.length) return "Sin horarios";
+  const byDay = {};
+  blocks.forEach((b) => {
+    const d = b.dia_semana;
+    if (!byDay[d]) byDay[d] = [];
+    byDay[d].push(
+      `${String(b.hora_inicio).slice(0, 5)}–${String(b.hora_fin).slice(0, 5)}`
+    );
+  });
+  return Object.keys(byDay)
+    .sort((a, b) => Number(a) - Number(b))
+    .map((d) => `${WEEKDAYS[d].slice(0, 3)} ${byDay[d].join(", ")}`)
+    .join(" · ");
+}
+
+function filteredScheduleDoctors() {
+  const q = _normText(document.getElementById("schedule-search")?.value || "");
+  const esp = document.getElementById("schedule-specialty-filter")?.value || "";
+  let list = _doctorsCache.filter((d) => d.activo);
+  if (esp) list = list.filter((d) => d.especialidad === esp);
+  if (q) {
+    list = list.filter((d) => {
+      const blob = _normText(`${d.nombre_completo} ${d.especialidad} ${d.correo || ""}`);
+      return blob.includes(q);
+    });
+  }
+  return list.sort((a, b) => {
+    const espCmp = _normText(a.especialidad).localeCompare(_normText(b.especialidad), "es");
+    if (espCmp !== 0) return espCmp;
+    return _normText(a.nombre_completo).localeCompare(_normText(b.nombre_completo), "es");
+  });
+}
+
+async function ensureScheduleBlocks(doctorIds) {
+  const missing = doctorIds.filter((id) => !_scheduleBlocksCache[id]);
+  await Promise.all(
+    missing.map(async (id) => {
+      try {
+        _scheduleBlocksCache[id] = await api(`/doctors/${id}/schedules`, { silent: true });
+      } catch {
+        _scheduleBlocksCache[id] = [];
+      }
+    })
+  );
+}
+
+async function renderScheduleDirectory() {
+  const box = document.getElementById("schedule-doctor-directory");
+  const hint = document.getElementById("schedule-dir-hint");
+  if (!box) return;
+  const list = filteredScheduleDoctors();
+  if (hint) {
+    hint.textContent = list.length
+      ? `${list.length} doctor(es) · clic en Ver agenda`
+      : "Ningún doctor coincide con la búsqueda";
+  }
+  if (!list.length) {
+    box.innerHTML = '<p class="empty">Sin doctores para mostrar</p>';
+    return;
+  }
+  await ensureScheduleBlocks(list.map((d) => d.id));
+  box.innerHTML = `<table class="schedule-dir-table"><thead><tr>
+      <th>Nombre</th><th>Especialidad</th><th>Horario semanal</th><th></th>
+    </tr></thead><tbody>
+    ${list
+      .map((d) => {
+        const blocks = _scheduleBlocksCache[d.id] || [];
+        const selected = String(_selectedScheduleDoctorId) === String(d.id);
+        return `<tr class="${selected ? "is-selected" : ""}">
+          <td><strong>${d.nombre_completo}</strong></td>
+          <td><span class="role-pill">${d.especialidad}</span></td>
+          <td class="schedule-dir-summary">${summarizeBlocks(blocks)}</td>
+          <td class="actions">
+            <button type="button" class="btn btn-sm btn-primary" onclick="selectScheduleDoctor(${d.id})">
+              ${selected ? "Editando" : "Ver agenda"}
+            </button>
+          </td>
+        </tr>`;
+      })
+      .join("")}
+  </tbody></table>`;
+}
+
+window.selectScheduleDoctor = async (doctorId) => {
+  _selectedScheduleDoctorId = doctorId;
+  const sel = document.getElementById("schedule-doctor");
+  if (sel) sel.value = String(doctorId);
+  syncScheduleDoctorHidden();
+  const editor = document.getElementById("schedule-editor");
+  if (editor) editor.hidden = false;
+  await renderSchedules(doctorId);
+  await renderScheduleDirectory();
+  editor?.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
 async function loadSchedules() {
   const doctors = await api("/doctors");
+  _scheduleBlocksCache = {};
   populateDoctorSelects(doctors);
-  const doctorId = document.getElementById("schedule-doctor").value || doctors[0]?.id;
-  if (doctorId) {
-    document.getElementById("schedule-doctor").value = doctorId;
-    syncScheduleDoctorHidden();
-    await renderSchedules(doctorId);
+  await renderScheduleDirectory();
+  if (_selectedScheduleDoctorId) {
+    const still = _doctorsCache.some((d) => d.id === _selectedScheduleDoctorId && d.activo);
+    if (still) {
+      await selectScheduleDoctor(_selectedScheduleDoctorId);
+    } else {
+      _selectedScheduleDoctorId = null;
+      const editor = document.getElementById("schedule-editor");
+      if (editor) editor.hidden = true;
+    }
   }
 }
 
@@ -740,6 +869,7 @@ async function renderSchedules(doctorId) {
   if (!board) return;
   try {
     const blocks = await api(`/doctors/${doctorId}/schedules`);
+    _scheduleBlocksCache[doctorId] = blocks;
     const byDay = Object.fromEntries(WEEKDAYS.map((_, i) => [i, []]));
     blocks.forEach((b) => {
       byDay[b.dia_semana]?.push(b);
@@ -768,10 +898,17 @@ async function renderSchedules(doctorId) {
   }
 }
 
-document.getElementById("schedule-doctor")?.addEventListener("change", (e) => {
-  syncScheduleDoctorHidden();
-  renderSchedules(e.target.value);
+document.getElementById("schedule-search")?.addEventListener("input", () => {
+  renderScheduleDirectory();
 });
+document.getElementById("schedule-specialty-filter")?.addEventListener("change", () => {
+  renderScheduleDirectory();
+});
+document.getElementById("schedule-refresh-btn")?.addEventListener("click", async () => {
+  await loadSchedules();
+  toast("Horarios redesplegados");
+});
+document.getElementById("slots-specialty")?.addEventListener("change", fillSlotsDoctorSelect);
 
 document.querySelectorAll(".preset-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -815,8 +952,10 @@ document.getElementById("schedule-form")?.addEventListener("submit", async (e) =
   }
   if (ok) toast(`Se agregaron ${ok} turno(s)`);
   if (fallos) toast(`${fallos} día(s) no se pudieron agregar (quizá ya existían)`, "error");
+  delete _scheduleBlocksCache[doctorId];
   syncScheduleDoctorHidden();
-  renderSchedules(doctorId);
+  await renderSchedules(doctorId);
+  await renderScheduleDirectory();
 });
 
 const scheduleGenerateBtn = document.getElementById("schedule-generate-btn");
@@ -849,8 +988,10 @@ if (scheduleGenerateBtn) {
         body: JSON.stringify({ reemplazar }),
       });
       toast(`Semana lista: ${bloques.length} turno(s)`);
+      delete _scheduleBlocksCache[doctorId];
       syncScheduleDoctorHidden();
-      renderSchedules(doctorId);
+      await renderSchedules(doctorId);
+      await renderScheduleDirectory();
     } catch (err) {
       toast(err.message, "error");
     }
@@ -862,7 +1003,8 @@ window.deleteSchedule = async (id) => {
   try {
     await api(`/schedules/${id}`, { method: "DELETE" });
     toast("Horario eliminado");
-    loadSchedules();
+    if (_selectedScheduleDoctorId) delete _scheduleBlocksCache[_selectedScheduleDoctorId];
+    await loadSchedules();
   } catch (e) {
     toast(e.message, "error");
   }
